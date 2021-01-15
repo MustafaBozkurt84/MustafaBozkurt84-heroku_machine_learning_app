@@ -385,8 +385,8 @@ def add_parameter_ui(clf_name):
         n_estimators = st.sidebar.slider("n_estimators", 50, 2000)
         criterion = st.sidebar.selectbox("criterion",('entropy','gini'))
         max_features = st.sidebar.selectbox("max_features",('auto', 'sqrt','log2') )
-        min_samples_leaf = st.sidebar.slider("min_samples_leaf",2,10 )
-        min_samples_split = st.sidebar.slider("min_samples_split",2.0,20.0 )
+        min_samples_leaf = st.sidebar.slider("min_samples_leaf",1,10 )
+        min_samples_split = st.sidebar.slider("min_samples_split",2,20 )
         params["max_depth"] = max_depth
         params["n_estimators"] = n_estimators
         params["criterion"] = criterion
@@ -545,8 +545,12 @@ def Prediction(dftest,testfile):
         return df
 
     allonehotencoding_test(dftest)
-    dftest = dftest.loc[:, col_after_endoded_all]
-    dftest = dftest.drop(df.select_dtypes("object").columns, axis=1)
+    for i in col_after_endoded_all:
+        if i not in dftest.columns:
+            dftest[i]=np.where(False,1,0)
+
+    dftest = dftest.loc[:,col_after_endoded_all]
+    dftest = dftest.drop(dftest.select_dtypes("object").columns, axis=1)
 
     ## feature importance
 
