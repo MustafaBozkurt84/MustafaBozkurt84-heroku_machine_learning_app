@@ -1,0 +1,8 @@
+streamlit
+sklearn
+pandas
+numpy
+matplotlib
+missingno
+seaborn
+
