@@ -649,7 +649,7 @@ def download_model(model):
     st.markdown(href, unsafe_allow_html=True)
 download_model(clf)
 # save the model to disk
-if st.button("Generate Codes for Save & Load Model"):
+if st.button("Generate Code for Save & Load Model"):
     st.code("""#save & load the model  
 filename = 'finalized_model.sav'
 pickle.dump(clf, open(filename, 'wb'))
@@ -658,7 +658,7 @@ loaded_model = pickle.load(open(filename, 'rb'))""")
 
 
 try:
-    st.write(""" ## Visialization of the  Model """)
+    st.write(""" ## Visualization of the  Model """)
     pca = PCA(2)
     X_projected = pca.fit_transform(df)
     x1 = X_projected[:,0]
@@ -670,7 +670,7 @@ try:
     plt.ylabel("Principal Component 2")
     plt.colorbar()
     st.pyplot()
-    if st.button("Generate Codes for Save & Load Model"):
+    if st.button("Generate Code for Visualization"):
         st.code("""pca = PCA(2)
 X_projected = pca.fit_transform(df)
 x1 = X_projected[:,0]
