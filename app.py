@@ -19,7 +19,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing  import RobustScaler
 import scipy.stats as stat
-st.title("Create Model Your Own Model and Generate Code")
+st.title("Create Your Own Model and Generate Code")
 st.write("""
 ## With this app, you can create and test your own model with your own data. 
 ## Currently only works for Classification Models.
