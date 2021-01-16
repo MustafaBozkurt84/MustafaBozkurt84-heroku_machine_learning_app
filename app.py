@@ -252,7 +252,7 @@ try:
         df[variable] = np.where(df[variable]>upper_bridge,upper_bridge,df[variable])
         df[variable] = np.where(df[variable]<lower_bridge,lower_bridge,df[variable])
         return df[variable].describe()
-    if Outliers_handle== "Handle Outliers":
+    if Outliers_handle == "Handle Outliers":
 
         for i in numeric_cols:
 
@@ -275,9 +275,23 @@ try:
                             #st.pyplot(fig)
                             outliers_skewed(df, i)
                             st.write(f"{i}  column has gaussian distribution and {num_outliers} outliers value.")
-        if st.button("Generate Codes for Outliers"):
-            if Outliers_handle == "Handle Outliers":
-                st.code(f"""
+
+
+    else:
+        st.write("You are keeping all outliers")
+        for i in numeric_cols:
+
+            IQR = df[i].quantile(0.75) - df[i].quantile(0.25)
+            lower_bridge = df[i].quantile(0.25) - (IQR * 1.5)
+            upper_bridge = df[i].quantile(0.75) + (IQR * 1.5)
+            num_outliers = df[~df[i].between(lower_bridge, upper_bridge)].value_counts().sum()
+            if (df[i].max()>upper_bridge) | (df[i].min()<lower_bridge):
+                st.write(f"{i} column has {num_outliers} outliers")
+except:
+    pass
+if st.button("Generate Codes for Outliers"):
+    if Outliers_handle == "Handle Outliers":
+        st.code(f"""
 def outliers_gaussion(df,variable):
     upper_boundary = df[variable].mean()+3*df[variable].std()
     lower_boundary= df[variable].mean()-3*df[variable].std()
@@ -301,19 +315,6 @@ for i in numeric_cols:
             outliers_gaussion(df, i)
         else:
             outliers_skewed(df, i)""")
-
-    else:
-        st.write("You are keeping all outliers")
-        for i in numeric_cols:
-
-            IQR = df[i].quantile(0.75) - df[i].quantile(0.25)
-            lower_bridge = df[i].quantile(0.25) - (IQR * 1.5)
-            upper_bridge = df[i].quantile(0.75) + (IQR * 1.5)
-            num_outliers = df[~df[i].between(lower_bridge, upper_bridge)].value_counts().sum()
-            if (df[i].max()>upper_bridge) | (df[i].min()<lower_bridge):
-                st.write(f"{i} column has {num_outliers} outliers")
-except:
-    pass
 st.markdown(30*"--")
 st.write("""
 ## Encoding
