@@ -670,8 +670,12 @@ try:
     plt.ylabel("Principal Component 2")
     plt.colorbar()
     st.pyplot()
-    if st.button("Generate Code for Visualization"):
-        st.code("""pca = PCA(2)
+
+
+except:
+    pass
+if st.button("Generate Code for Visualization"):
+    st.code("""pca = PCA(2)
 X_projected = pca.fit_transform(df)
 x1 = X_projected[:,0]
 x2 = X_projected[:,1]
@@ -680,9 +684,6 @@ plt.xlabel("Principal Component 1")
 plt.ylabel("Principal Component 2")
 plt.colorbar()
 plt.show()""")
-
-except:
-    pass
 st.cache()
 
 df_test.drop(target_column, axis= 1, inplace=True)
