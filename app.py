@@ -27,6 +27,7 @@ Load your own dataset or select dataset
 """)
 
 
+
 uploaded_files = st.file_uploader("Upload new dataset CSV ", type="csv", accept_multiple_files=False)
 
 try:
@@ -50,13 +51,40 @@ except:
 
 
     df,target_column = get_dataset(dataset_name)
-
+if st.button("Generate Codes for Libraries"):
+    st.code(f"""
+import pandas as pd
+from sklearn import datasets
+import numpy as np
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pickle
+import missingno as msno
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing  import RobustScaler
+import scipy.stats as stat """)
 df_test = df
+if st.button("Generate Codes for reading file"):
+    st.code(f"""df = pd.read_csv("data.csv")
+target_columns = "{target_column}"
+""")
 st.cache()
 drop_true = st.selectbox("Drop columns that you want to drop (ID Columns etc.)",("Keep All Columns","Select  Columns to drop"))
 if drop_true == "Select  Columns to drop":
     d_list = st.multiselect("Select Columns that will be dropped",df.columns)
     df = df.drop(d_list,axis=1)
+    if st.button("Generate Codes for Columns to drop"):
+        if drop_true == "Select  Columns to drop":
+            st.code(f"""df = df.drop({d_list},axis=1)""")
 
 
 visualization=st.sidebar.selectbox("Select an option for EDA visualization",("Do not show visualization","Show visualization"))
@@ -77,6 +105,18 @@ if visualization=="Show visualization":
     st.set_option('deprecation.showPyplotGlobalUse', False)
     msno.matrix(df)
     st.pyplot()
+    if st.button("Generate Codes for visualization"):
+        if visualization == "Show visualization":
+            st.code(f"""
+#Visialization
+sns.pairplot(df, hue={target_column})
+fig, ax = plt.subplots()
+sns.heatmap(df.corr(),
+              vmin=-1,
+              cmap='coolwarm',
+              annot=True);
+df.isnull().sum().plot(kind='bar')
+msno.matrix(df)""")
 st.cache()
 
 
@@ -104,6 +144,22 @@ if len(corCol)>0:
     st.write(f"{corCol} columns correlations more than {threshold} and we dropped")
 else:
     st.write("No columns exceeding the threshold you set for correlation")
+if st.button("Generate Codes for Correlation"):
+    st.code(f"""#find and remove correlated features
+corCol=[]
+numeric_cols = df.select_dtypes(exclude=["object"]).columns
+def correlation(dataset, threshold):
+    col_corr = set()  # Set of all the names of correlated columns
+    corr_matrix = dataset.corr()
+    for i in range(len(corr_matrix.columns)):
+        for j in range(i):
+            if abs(corr_matrix.iloc[i, j]) > threshold: # we are interested in absolute coeff value
+                colname = corr_matrix.columns[i]  # getting the name of column
+                col_corr.add(colname)
+                corCol.append(colname)
+    return col_corr
+correlation(df,threshold={threshold})
+df.drop(corCol, axis=1, inplace=True)""")
 
 
 st.write(30*"--")
@@ -122,6 +178,13 @@ def missing_drop(df,treshold_na):
     if len(drop_list) == 0:
         st.write("No columns exceeding the threshold you set for missingness")
 missing_drop(df,treshold_na= threshold_na)
+if st.button("Generate Codes for Missing drop"):
+    st.code(f"""def missing_drop(df,treshold_na):
+    for variable in df.columns:
+    percentage = round((df[variable].isnull().sum()/df[variable].count())*10)
+    if percentage>treshold_na:
+        df.drop(variable,inplace=True,axis=1)
+missing_drop(df,treshold_na= {threshold_na})""")
 nan_values = st.selectbox("Choose an option for Nan imputation ", ("Drop All Nan Values", "Fill Nan values median and mod"))
 def impute_nan_median(df,variable):
     if df[variable].isnull().sum()>0:
@@ -148,6 +211,26 @@ else:
             impute_nan_cat_mode(df, i)
         else:
             impute_nan_median(df, i)
+if st.button("Generate Codes for Missing Values"):
+    if nan_values == "Drop All Nan Values":
+        st.code(f""" #Drop All Nan Values
+df.dropna(inplace=True)""")
+    else:
+        st.code(f"""def impute_nan_median(df,variable):
+    if df[variable].isnull().sum()>0:
+        df[variable+"NAN"] = np.where(df[variable].isnull(), 1, 0)
+        df[variable] = df[variable].fillna(df[variable].median())
+def impute_nan_cat_mode(df,variable):
+    if df[variable].isnull().sum() > 0:
+        df[variable+"NAN"] = np.where(df[variable].isnull(), 1, 0)
+        frequent=df[variable].mode()[0]
+        df[variable].fillna(frequent, inplace=True)
+    for i in df.columns:
+        if (np.dtype(df[i])=="object"):
+            impute_nan_cat_mode(df, i)
+        else:
+            impute_nan_median(df, i)""")
+
 st.markdown(30*"--")
 st.write("""
 ## Outliers
@@ -190,6 +273,33 @@ try:
                             #st.pyplot(fig)
                             outliers_skewed(df, i)
                             st.write(f"{i}  column has gaussian distribution and {num_outliers} outliers value.")
+        if st.button("Generate Codes for Outliers"):
+            if Outliers_handle == "Handle Outliers":
+                st.code(f"""
+def outliers_gaussion(df,variable):
+    upper_boundary = df[variable].mean()+3*df[variable].std()
+    lower_boundary= df[variable].mean()-3*df[variable].std()
+    df[variable] = np.where(df[variable]>upper_boundary,upper_boundary,df[variable])
+    df[variable] = np.where(df[variable]<lower_boundary,lower_boundary,df[variable])
+    return df[variable].describe()
+def outliers_skewed(df,variable):
+    IQR = df[variable].quantile(0.75)-df[variable].quantile(0.25)
+    lower_bridge = df[variable].quantile(0.25)-(IQR*1.5)
+    upper_bridge = df[variable].quantile(0.75)+(IQR*1.5)
+    df[variable] = np.where(df[variable]>upper_bridge,upper_bridge,df[variable])
+    df[variable] = np.where(df[variable]<lower_bridge,lower_bridge,df[variable])
+    return df[variable].describe()
+for i in numeric_cols:
+    IQR = df[i].quantile(0.75) - df[i].quantile(0.25)
+    lower_bridge = df[i].quantile(0.25) - (IQR * 1.5)
+    upper_bridge = df[i].quantile(0.75) + (IQR * 1.5)
+    num_outliers = df[~df[i].between(lower_bridge, upper_bridge)].value_counts().sum()
+    if (df[i].max()>upper_bridge) | (df[i].min()<lower_bridge):
+        if ((df[i].skew()<2)&(df[i].skew()>0)):
+            outliers_gaussion(df, i)
+        else:
+            outliers_skewed(df, i)""")
+
     else:
         st.write("You are keeping all outliers")
         for i in numeric_cols:
@@ -202,7 +312,6 @@ try:
                 st.write(f"{i} column has {num_outliers} outliers")
 except:
     pass
-
 st.markdown(30*"--")
 st.write("""
 ## Encoding
@@ -235,6 +344,26 @@ for i in df.columns:
         df = df.drop([i], axis=1)
 col_after_endoded_all=df.columns
 st.write(f"Onehotencoding : {num_cat_col} columns encoded and  {len(encode_list)} columns added")
+if st.button("Generate Codes for Encoding"):
+    st.code("""
+y = df.loc[:,target_column]
+df =df.drop([target_column],axis=1)
+def allonehotencoding(df):
+    for i in X.columns:
+        if (np.dtype(df[i]) == "object"):
+            unique_value=len(df[i].value_counts().sort_values(ascending=False).index)
+            if unique_value >10:
+                for categories in (df[i].value_counts().sort_values(ascending=False).head(10).index):
+                    df[i+"_"+categories]=np.where(df[i]==categories,1 ,0)
+            else:
+                for categories in (df[i].value_counts().sort_values(ascending=False).head(unique_value-1).index):
+                    df[i + "_" + categories] = np.where(df[i] == categories, 1, 0)
+    return df
+allonehotencoding(df)
+for i in df.columns:
+    if (np.dtype(df[i]) == "object"):
+        df = df.drop([i], axis=1)""")
+
 st.markdown(30*"--")
 st.write("""
 ## Feature Selection
@@ -271,9 +400,27 @@ if Feature_importance == "Reduce Features":
     Univariate_Selection(df,y,feature_number)
 
     df = df[X_Selected]
+    if st.button("Generate Codes for Feature Importance"):
+        if Feature_importance == "Reduce Features":
+            st.code(f"""
+X_Selected=[]
+def Univariate_Selection( independent, dependent, N):
+    select_obj = SelectKBest(score_func=chi2, k=10)
+    selected = select_obj.fit( independent, dependent)
+    feature_score = pd.DataFrame(selected.scores_, index= independent.columns, columns=["Score"])["Score"].sort_values(ascending=False).reset_index()
+    plt.figure(figsize=(16, 16))
+    sns.barplot(data=feature_score.sort_values(by='Score', ascending=False).head(N), x='Score', y='index')
+    plt.title(f' feature importance ')
+    plt.show()
+    X_Selected.extend(feature_score["index"].head(N))
+Univariate_Selection(df,y,{feature_number})
+df = df[X_Selected]""")
+
+
 else :
     st.write(f"You select all features / Total Columns {len(df.columns)}")
     Univariate_Selection1(df,y,(df.columns))
+
 
 st.markdown(30*"--")
 st.write("""
@@ -327,6 +474,49 @@ if standard_apply=="Apply Standardization":
         else:
              df[i]=df[i]**(1/1.2)
     st.write(f"{s_cols} are scaled by using {scale_s}")
+    if st.button("Generate Codes for Standardization"):
+        if standard_apply == "Apply Standardization":
+            st.code(f"""
+g_cols=[]
+s_cols=[]
+num_coll=[]
+numeric_cols=df_test.select_dtypes(exclude=["object"]).columns
+for i in numeric_cols:
+    if i not in (df.columns):
+        pass
+    else:
+        num_coll.append(i)
+    for i in num_coll:
+        skewness=df[i].skew()
+        if (skewness<2) & (skewness>0.1):
+            g_cols.append(i)
+        else:
+            s_cols.append(i)""")
+
+            if scale_g == "StandardScaler":
+                st.code(f"""#{scale_g}
+scaler_obj=StandardScaler()
+df[g_cols]=scaler_obj.fit_transform(df[g_cols])""")
+            elif scale_g == "MinMaxScaler":
+                st.code(f"""#{scale_g}
+scaler_obj = MinMaxScaler().fit(df[g_cols])
+df[g_cols] = scaler_obj.transform(df[g_cols])""")
+            else:
+                st.code(f"""#{scale_g}
+scaler_obj = RobustScaler().fit(df[g_cols])
+df[g_cols] = scaler_obj.transform(df[g_cols])""")
+            if scale_s == "Logarithmic Transformation":
+                st.code(f"""#{scale_s}
+for i in s_cols:
+    df[i]=np.log(df[i].replace(0,0.01))""")
+            elif scale_s == "Box Cox Transformation":
+                st.code(f"""#{scale_s}
+for i in s_cols:
+    df[i],parameters=stat.boxcox(df[i].replace(0,0.01))""")
+            else:
+                st.code(f"""#{scale_s}
+for i in s_cols:
+    df[i]=df[i]**(1/1.2)""")
 
 st.markdown(30*"--")
 st.write("""
@@ -351,9 +541,16 @@ if use_pca == "Use principal component analysis":
     df=pca1.fit_transform(df)
     df = pd.DataFrame(df)
     st.write(f"Number of Components : {pca_num}   representation ratio : {pca1.explained_variance_ratio_.sum()}")
+    if st.button("Generate Codes for PCA"):
+        if use_pca == "Use principal component analysis":
+            st.code(f"""pca1=PCA(n_components={pca_num})
+df=pca1.fit_transform(df)
+df = pd.DataFrame(df)""")
+
 
 
 st.markdown(30*"--")
+st.write("## Machine Learning")
 params = dict()
 models_name = st.sidebar.selectbox("Select Model", ("KNN", "SVM", "Random Forest"))
 
@@ -417,6 +614,27 @@ y_pred = clf.predict(X_test)
 acc = accuracy_score(y_test, y_pred)
 st.sidebar.write(f"classifier = {models_name}")
 st.sidebar.write(f"accuracy = {acc}")
+st.write(f"classifier = {models_name}")
+st.write(f"accuracy = {acc}")
+if st.button("Generate Codes for Machine Learning"):
+    if models_name == "KNN":
+        st.code(f"""clf = KNeighborsClassifier(n_neighbors={params["K"]},leaf_size={params["leaf_size"]},p={params["p"]})""")
+    elif models_name == "SVM":
+        st.code(f"""clf = SVC(C={params["C"]},gamma={params["gamma"]}""")
+    else:
+        st.code(f"""
+clf = RandomForestClassifier(n_estimators={params["n_estimators"]}, 
+                                max_depth={params["max_depth"]},
+                                criterion={params["criterion"]},
+                                max_features={params["max_features"]},
+                                min_samples_leaf={params["min_samples_leaf"]},
+                                min_samples_split={params["min_samples_split"]} ,
+                                random_state=42)""")
+    st.code(f"""X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2,random_state=42)
+clf.fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+acc = accuracy_score(y_test, y_pred)""")
+
 st.write(""" ## Download Model """)
 st.cache()
 def download_model(model):
@@ -425,10 +643,17 @@ def download_model(model):
     href = f'<a href="data:file/output_model;base64,{b64}">Download Trained Model .pkl File</a> (right-click and save as &lt;model&gt;.pkl)'
     st.markdown(href, unsafe_allow_html=True)
 download_model(clf)
-    # PLOT
-st.write(""" ## Visialization of the  Model """)
+# save the model to disk
+if st.button("Generate Codes for Save & Load Model"):
+    st.code("""#save & load the model  
+filename = 'finalized_model.sav'
+pickle.dump(clf, open(filename, 'wb'))
+loaded_model = pickle.load(open(filename, 'rb'))""")
+# PLOT
+
 
 try:
+    st.write(""" ## Visialization of the  Model """)
     pca = PCA(2)
     X_projected = pca.fit_transform(df)
     x1 = X_projected[:,0]
@@ -440,9 +665,21 @@ try:
     plt.ylabel("Principal Component 2")
     plt.colorbar()
     st.pyplot()
+    if st.button("Generate Codes for Save & Load Model"):
+        st.code("""pca = PCA(2)
+X_projected = pca.fit_transform(df)
+x1 = X_projected[:,0]
+x2 = X_projected[:,1]
+plt.scatter(x1, x2, c=y, alpha=0.8, cmap="viridis")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.colorbar()
+plt.show()""")
+
 except:
     pass
 st.cache()
+
 df_test.drop(target_column, axis= 1, inplace=True)
 columns = df_test.columns
 print(columns)
@@ -628,7 +865,10 @@ def Prediction(dftest,testfile):
 if st.button("Predict"):
     Prediction(dftest,testfile)
 
-st.write("https://github.com/MustafaBozkurt84/heroku_machine_learning_app")
+st.write("https://github.com/MustafaBozkurt84/MustafaBozkurt84-heroku_machine_learning_app")
+
+
+
 
 
 
