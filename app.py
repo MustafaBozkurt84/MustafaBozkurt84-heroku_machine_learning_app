@@ -289,8 +289,8 @@ try:
                 st.write(f"{i} column has {num_outliers} outliers")
 except:
     pass
-if st.button("Generate Codes for Outliers"):
-    if Outliers_handle == "Handle Outliers":
+if Outliers_handle == "Handle Outliers":
+    if st.button("Generate Codes for Outliers"):
         st.code(f"""
 def outliers_gaussion(df,variable):
     upper_boundary = df[variable].mean()+3*df[variable].std()
