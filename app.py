@@ -696,6 +696,7 @@ except:
 
     st.write("OR ENTER YOUR DATA MANUALLY")
     dftest = pd.DataFrame()
+
     testfile = dftest
     for i in df_test.columns:
         if i not in cat_columns:
@@ -719,7 +720,7 @@ except:
 
 st.write(dftest)
 
-st.cache()
+
 def Prediction(dftest,testfile):
     ## Correlation Drop
     try:
