@@ -19,10 +19,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing  import RobustScaler
 import scipy.stats as stat
-st.title("Automated Machine Learning ")
+st.title("Create Model Your Own Model and Generate Code")
 st.write("""
-# With this API, you can set up your own model and then make predictions for classification.
-## Let's start ! 
+## With this app, you can create and test your own model with your own data. 
+## Currently only works for Classification Models.
+### Let's start ! 
 Load your own dataset or select dataset 
 """)
 
@@ -378,7 +379,7 @@ def Univariate_Selection(indipendant, dependent, N):
     feature_score = pd.DataFrame(selected.scores_, index=indipendant.columns, columns=["Score"])["Score"].sort_values(
         ascending=False).reset_index()
     st.write("Feature Importance Table")
-    st.table(feature_score)
+    st.table(feature_score.head(N))
     plt.figure(figsize=(16, 16))
     sns.barplot(data=feature_score.sort_values(by='Score', ascending=False).head(N), x='Score', y='index')
     plt.title(f'{N} TOP feature importance ')
@@ -400,21 +401,23 @@ if Feature_importance == "Reduce Features":
     Univariate_Selection(df,y,feature_number)
 
     df = df[X_Selected]
-    if st.button("Generate Codes for Feature Importance"):
+    if st.button("Generate Code for Feature Selection"):
         if Feature_importance == "Reduce Features":
             st.code(f"""
-X_Selected=[]
+
 def Univariate_Selection( independent, dependent, N):
+    X_Selected=[]
     select_obj = SelectKBest(score_func=chi2, k=10)
     selected = select_obj.fit( independent, dependent)
     feature_score = pd.DataFrame(selected.scores_, index= independent.columns, columns=["Score"])["Score"].sort_values(ascending=False).reset_index()
     plt.figure(figsize=(16, 16))
     sns.barplot(data=feature_score.sort_values(by='Score', ascending=False).head(N), x='Score', y='index')
-    plt.title(f' feature importance ')
+    plt.title(f'Top {feature_number} feature importance ')
     plt.show()
     X_Selected.extend(feature_score["index"].head(N))
-Univariate_Selection(df,y,{feature_number})
-df = df[X_Selected]""")
+    df = df[X_Selected] 
+    return df
+df = Univariate_Selection(df,y,{feature_number})""")
 
 
 else :
