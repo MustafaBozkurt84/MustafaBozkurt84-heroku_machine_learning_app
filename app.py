@@ -582,7 +582,7 @@ def add_parameter_ui(clf_name):
     elif clf_name == "Logistic Regression":
         st.sidebar.write("Select Parameters")
         C = st.sidebar.slider("C", 0.0001, 1000.0)
-        penalty = st.sidebar.selectbox("penalty", ('l1', 'l2'))
+        penalty = st.sidebar.selectbox("penalty", ('l2', 'l1'))
         max_iter = st.sidebar.slider('max_iter',1,800)
         solver = st.sidebar.selectbox("solver",('newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'))
         params["C"] = C
@@ -718,7 +718,7 @@ clf = XGBClassifier(max_depth={params["max_depth"]},
     elif models_name == "LightGBM":
         st.code(f"""
 clf = lgb.LGBMClassifier(n_estimators={params["n_estimators"]},
-                    boosting_type={params["boosting_type"]},
+                    boosting_type="{params["boosting_type"]}",
                     num_leaves={params["num_leaves"]},
                     reg_alpha={params["reg_alpha"]},
                     reg_lambda={params["reg_lambda"]},
