@@ -5,4 +5,6 @@ numpy
 matplotlib
 missingno
 seaborn
+xgb
+lgbm
 

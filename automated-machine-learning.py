@@ -3,8 +3,10 @@ import pandas as pd
 from sklearn import datasets
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
+
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.decomposition import PCA
@@ -19,6 +21,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing  import RobustScaler
 import scipy.stats as stat
+from xgboost import XGBClassifier
+import lightgbm as lgb
+import re
 st.title("Create Your Own Model and Generate Code")
 st.image('./automated-machine-learning.png')
 st.write("""
@@ -34,6 +39,7 @@ uploaded_files = st.file_uploader("Upload new dataset CSV ", type="csv", accept_
 
 try:
     df = pd.read_csv(uploaded_files)
+    df = df.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
     target_column = st.selectbox("Select your target Column", df.columns)
 except:
     dataset_name = st.selectbox("Select Datasets", ("Titanic","Churn"))
@@ -44,12 +50,15 @@ except:
     def get_dataset(dataset_name):
         if dataset_name == "Titanic":
             df = pd.read_csv("train.csv")
+            df = df.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
             target_column = "Survived"
         else:
             df = pd.read_csv("trainchurn.csv")
+            df = df.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
             target_column="churn"
 
         return df,target_column
+
 
 
     df,target_column = get_dataset(dataset_name)
@@ -557,7 +566,7 @@ df = pd.DataFrame(df)""")
 st.markdown(30*"--")
 st.write("## Machine Learning")
 params = dict()
-models_name = st.sidebar.selectbox("Select Model", ("KNN", "SVM", "Random Forest"))
+models_name = st.sidebar.selectbox("Select Model", ("KNN","Logistic Regression", "SVM", "Random Forest","XGBoost","LightGBM"))
 
 def add_parameter_ui(clf_name):
 
@@ -569,6 +578,18 @@ def add_parameter_ui(clf_name):
         params["leaf_size"]=leaf_size
         p =st.sidebar.slider("p",1,2)
         params["p"]=p
+
+    elif clf_name == "Logistic Regression":
+        st.sidebar.write("Select Parameters")
+        C = st.sidebar.slider("C", 0.0001, 1000.0)
+        penalty = st.sidebar.selectbox("penalty", ('l1', 'l2'))
+        max_iter = st.sidebar.slider('max_iter',1,800)
+        solver = st.sidebar.selectbox("solver",('newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'))
+        params["C"] = C
+        params["penalty"] = penalty
+        params["max_iter"] = max_iter
+        params["solver"] = solver
+
     elif clf_name == "SVM":
         st.sidebar.write("Select Parameters")
         C = st.sidebar.slider("C", 0.0001, 1000.0)
@@ -578,6 +599,43 @@ def add_parameter_ui(clf_name):
         st.sidebar.write(gamma_range)
         params["gamma"]=gamma_range
 
+
+    elif clf_name == "XGBoost":
+        st.sidebar.write("Select Parameters")
+        max_depth = st.sidebar.slider("max_depth", 10, 200)
+        n_estimators = st.sidebar.slider("n_estimators", 50, 2000)
+        subsample = st.sidebar.slider("subsample", 0.01,0.90)
+        learning_rate = st.sidebar.slider("learning_rate", 0.001,0.999)
+        colsample_bytree = st.sidebar.slider("colsample_bytree", 0.01,0.90)
+        min_child_weight = st.sidebar.slider("min_child_weight", 1, 5)
+        params["max_depth"] = max_depth
+        params["n_estimators"] = n_estimators
+        params["min_child_weight"] = min_child_weight
+        params["colsample_bytree"] = colsample_bytree
+        params["learning_rate"] = learning_rate
+        params["subsample"] = subsample
+    elif clf_name == "LightGBM":
+        st.sidebar.write("Select Parameters")
+        max_depth = st.sidebar.slider("max_depth", 5, 200)
+        reg_alpha = st.sidebar.slider("reg_alpha", 1, 20)
+        n_estimators = st.sidebar.slider("n_estimators", 50, 2000)
+        boosting_type = st.sidebar.selectbox("boosting_type", ('gbdt', 'dart', 'goss'))
+        reg_lambda = st.sidebar.slider("reg_lambda", 1,20)
+        num_leaves = st.sidebar.slider("num_leaves", 2, 300)
+        colsample_bytree = st.sidebar.slider("colsample_bytree", 0.01,0.90)
+        min_child_samples = st.sidebar.slider("min_child_samples", 1, 5)
+        min_child_weight = st.sidebar.slider("min_child_weight", 1, 5)
+        learning_rate = st.sidebar.slider("learning_rate", 0.001, 0.999)
+        params["max_depth"] =  max_depth
+        params["reg_alpha"] = reg_alpha
+        params["n_estimators"] = n_estimators
+        params["boosting_type"] = boosting_type
+        params["reg_lambda"] = reg_lambda
+        params["num_leaves"] = num_leaves
+        params["colsample_bytree"] = colsample_bytree
+        params["min_child_weight"] = min_child_weight
+        params["min_child_samples"] = min_child_samples
+        params["learning_rate"] = learning_rate
 
 
     else:
@@ -605,16 +663,33 @@ def get_classifier(clf_name,params):
         clf = KNeighborsClassifier(n_neighbors=params["K"],leaf_size=params["leaf_size"],p=params["p"])
     elif clf_name == "SVM":
         clf = SVC(C=params["C"],gamma=params["gamma"])
+    elif clf_name =="Logistic Regression":
+        clf = LogisticRegression(C=params["C"],penalty=params["penalty"],max_iter=params["max_iter"],solver=params["solver"] )
+    elif clf_name == "XGBoost":
+        clf = XGBClassifier(max_depth = params["max_depth"],
+                            n_estimators = params["n_estimators"],
+                            min_child_weight = params["min_child_weight"],
+                            colsample_bytree=params["colsample_bytree"],
+                            learning_rate=params["learning_rate"],
+                            subsample=params["subsample"])
+    elif clf_name == "LightGBM":
+        clf = lgb.LGBMClassifier(**params)
     else:
-        clf = RandomForestClassifier(n_estimators=params["n_estimators"], max_depth=params["max_depth"],criterion=params["criterion"],max_features=params["max_features"],min_samples_leaf=params["min_samples_leaf"],min_samples_split=params["min_samples_split"] ,random_state=42)
+        clf = RandomForestClassifier(n_estimators=params["n_estimators"],
+                                     max_depth=params["max_depth"],
+                                     criterion=params["criterion"],
+                                     max_features=params["max_features"],
+                                     min_samples_leaf=params["min_samples_leaf"],
+                                     min_samples_split=params["min_samples_split"] ,
+                                     random_state=42)
 
     return clf
     # Classification
 clf = get_classifier(models_name,params)
 st.cache()
-df_train=df
-X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2,random_state=42)
-clf.fit(X_train, y_train)
+df_train = df
+X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2, random_state=42)
+clf.fit(X_train,y_train)
 y_pred = clf.predict(X_test)
 acc = accuracy_score(y_test, y_pred)
 st.sidebar.write(f"classifier = {models_name}")
@@ -626,6 +701,30 @@ if st.button("Generate Codes for Machine Learning"):
         st.code(f"""clf = KNeighborsClassifier(n_neighbors={params["K"]},leaf_size={params["leaf_size"]},p={params["p"]})""")
     elif models_name == "SVM":
         st.code(f"""clf = SVC(C={params["C"]},gamma={params["gamma"]}""")
+    elif models_name == "Logistic Regression":
+        st.code(f"""
+clf = LogisticRegression(C={params["C"]},
+                         penalty="{params["penalty"]}",
+                         max_iter={params["max_iter"]},
+                         solver="{params["solver"]}")""")
+    elif models_name == "XGBoost":
+        st.code(f"""
+clf = XGBClassifier(max_depth={params["max_depth"]},
+                    n_estimators={params["n_estimators"]},
+                    min_child_weight={params["min_child_weight"]},
+                    colsample_bytree={params["colsample_bytree"]},
+                    learning_rate={params["learning_rate"]},
+                    subsample={params["subsample"]})""")
+    elif models_name == "LightGBM":
+        st.code(f"""
+clf = lgb.LGBMClassifier(n_estimators={params["n_estimators"]},
+                    boosting_type={params["boosting_type"]},
+                    num_leaves={params["num_leaves"]},
+                    reg_alpha={params["reg_alpha"]},
+                    reg_lambda={params["reg_lambda"]},
+                    colsample_bytree={params["colsample_bytree"]},
+                    min_child_weight={params["min_child_weight"]},
+                    min_child_samples={params["min_child_samples"]})""")
     else:
         st.code(f"""
 clf = RandomForestClassifier(n_estimators={params["n_estimators"]}, 
