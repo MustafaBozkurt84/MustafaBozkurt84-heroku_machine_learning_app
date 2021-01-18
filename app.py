@@ -27,6 +27,7 @@ import re
 from sklearn.model_selection import cross_val_score,KFold, GroupKFold, StratifiedKFold, TimeSeriesSplit
 from sklearn.model_selection import RandomizedSearchCV,GridSearchCV
 from hyperopt import hp,fmin,tpe,STATUS_OK,Trials
+from tpot import TPOTClassifier
 #PAGE= st.sidebar.radio("Page",["Train","Test"])
 #if PAGE=="Train":
 st.title("Create Your Own Model and Generate Code")
@@ -581,19 +582,19 @@ def add_parameter_ui(clf_name):
 
     if clf_name == "KNN":
         st.sidebar.write("Select Parameters")
-        K = st.sidebar.slider("n_neighbors", 1, 15)
+        K = st.sidebar.slider("n_neighbors", 1, 15,5)
         params["K"] = K
-        leaf_size = st.sidebar.slider("leaf_size",1,50)
+        leaf_size = st.sidebar.slider("leaf_size",1,50,30)
         params["leaf_size"]=leaf_size
-        p =st.sidebar.slider("p",1,2)
+        p =st.sidebar.slider("p",1,2,2)
         params["p"]=p
 
     elif clf_name == "Logistic Regression":
         st.sidebar.write("Select Parameters")
-        C = st.sidebar.slider("C", 0.0001, 1000.0)
+        C = st.sidebar.slider("C", 0.0001, 1000.0,1.0)
         penalty = st.sidebar.selectbox("penalty", ('l2', 'l1'))
-        max_iter = st.sidebar.slider('max_iter',1,800)
-        solver = st.sidebar.selectbox("solver",('newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'))
+        max_iter = st.sidebar.slider('max_iter',1,800,100)
+        solver = st.sidebar.selectbox("solver",('lbfgs','newton-cg','liblinear', 'sag', 'saga'))
         params["C"] = C
         params["penalty"] = penalty
         params["max_iter"] = max_iter
@@ -601,7 +602,7 @@ def add_parameter_ui(clf_name):
 
     elif clf_name == "SVM":
         st.sidebar.write("Select Parameters")
-        C = st.sidebar.slider("C", 0.0001, 1000.0)
+        C = st.sidebar.slider("C", 0.0001, 1000.0,1.0)
         st.sidebar.write(C)
         params["C"] = C
         gamma_range = st.sidebar.slider("Gamma", 0.0001, 1000.0)
@@ -611,12 +612,12 @@ def add_parameter_ui(clf_name):
 
     elif clf_name == "XGBoost":
         st.sidebar.write("Select Parameters")
-        max_depth = st.sidebar.slider("max_depth", 10, 200)
-        n_estimators = st.sidebar.slider("n_estimators", 50, 2000)
-        subsample = st.sidebar.slider("subsample", 0.01,0.90)
-        learning_rate = st.sidebar.slider("learning_rate", 0.001,0.999)
-        colsample_bytree = st.sidebar.slider("colsample_bytree", 0.01,0.90)
-        min_child_weight = st.sidebar.slider("min_child_weight", 1, 5)
+        max_depth = st.sidebar.slider("max_depth", 2, 200,3)
+        n_estimators = st.sidebar.slider("n_estimators", 50, 2000,100)
+        subsample = st.sidebar.slider("subsample", 0.01,1.00,1.00)
+        learning_rate = st.sidebar.slider("learning_rate", 0.001,0.999,0.100)
+        colsample_bytree = st.sidebar.slider("colsample_bytree", 0.01,1.0,1.0)
+        min_child_weight = st.sidebar.slider("min_child_weight", 1, 5,1)
         params["max_depth"] = max_depth
         params["n_estimators"] = n_estimators
         params["min_child_weight"] = min_child_weight
@@ -625,16 +626,16 @@ def add_parameter_ui(clf_name):
         params["subsample"] = subsample
     elif clf_name == "LightGBM":
         st.sidebar.write("Select Parameters")
-        max_depth = st.sidebar.slider("max_depth", 5, 200,30)
-        reg_alpha = st.sidebar.slider("reg_alpha", 1, 20,5)
+        max_depth = st.sidebar.slider("max_depth", -1, 200,-1)
+        reg_alpha = st.sidebar.slider("reg_alpha", 0.0, 20.0,0.0)
         n_estimators = st.sidebar.slider("n_estimators", 50, 2000,100)
         boosting_type = st.sidebar.selectbox("boosting_type", ('gbdt', 'dart', 'goss'))
-        reg_lambda = st.sidebar.slider("reg_lambda", 1,20,5)
-        num_leaves = st.sidebar.slider("num_leaves", 2, 300,50)
-        colsample_bytree = st.sidebar.slider("colsample_bytree", 0.01,0.90)
-        min_child_samples = st.sidebar.slider("min_child_samples", 1, 5)
-        min_child_weight = st.sidebar.slider("min_child_weight", 1, 5)
-        learning_rate = st.sidebar.slider("learning_rate", 0.001, 0.999,value=0.1)
+        reg_lambda = st.sidebar.slider("reg_lambda", 0.0,20.0,0.0)
+        num_leaves = st.sidebar.slider("num_leaves", 2, 300,31)
+        colsample_bytree = st.sidebar.slider("colsample_bytree", 0.01,1.0,1.0)
+        min_child_samples = st.sidebar.slider("min_child_samples", 1, 30,20)
+        min_child_weight = st.sidebar.slider("min_child_weight", 0.001, 1.0,0.001)
+        learning_rate = st.sidebar.slider("learning_rate", 0.001, 0.999,0.1)
         params["max_depth"] =  max_depth
         params["reg_alpha"] = reg_alpha
         params["n_estimators"] = n_estimators
@@ -650,12 +651,12 @@ def add_parameter_ui(clf_name):
     else:
 
         st.sidebar.write("Select Parameters")
-        max_depth = st.sidebar.slider("max_depth", 10, 1000)
-        n_estimators = st.sidebar.slider("n_estimators", 50, 2000)
-        criterion = st.sidebar.selectbox("criterion",('entropy','gini'))
+        max_depth = st.sidebar.slider("max_depth", 1, 1000,1)
+        n_estimators = st.sidebar.slider("n_estimators", 50, 2000,100)
+        criterion = st.sidebar.selectbox("criterion",('gini','entropy'))
         max_features = st.sidebar.selectbox("max_features",('auto', 'sqrt','log2') )
-        min_samples_leaf = st.sidebar.slider("min_samples_leaf",1,10 )
-        min_samples_split = st.sidebar.slider("min_samples_split",2,20 )
+        min_samples_leaf = st.sidebar.slider("min_samples_leaf",1,10,1 )
+        min_samples_split = st.sidebar.slider("min_samples_split",2,20,2 )
         params["max_depth"] = max_depth
         params["n_estimators"] = n_estimators
         params["criterion"] = criterion
@@ -769,10 +770,9 @@ y_pred = clf.predict(X_test)
 acc = accuracy_score(y_test, y_pred)""")
     else:
         st.code(f"""acc = cross_val_score(clf, df, y, cv={fold}, scoring="accuracy")""")
-st.write(""" ## Model Tuning """)
+st.write(f""" ## Model Tuning for {models_name}""")
 model_tuning = st.sidebar.selectbox("Select Option for Model Tuning",("Do not Apply Hyper Parameter Optimization ","Apply Hyper Parameter Optimization"))
-optimizers =["Select","RandomizedSearchCV-GridSearchCV", "Bayesian Optimization (Hyperopt)", "Sequential Model Based Optimization",
-     "Optuna- Automate Hyperparameter Tuning", "Genetic Algorithms (TPOT Classifier)"]
+optimizers =["Select","RandomizedSearchCV-GridSearchCV", "Bayesian Optimization (Hyperopt)", "Optuna- Automate Hyperparameter Tuning", "Genetic Algorithms (TPOT Classifier)"]
 if model_tuning == "Apply Hyper Parameter Optimization":
     fold_cv_hyp = st.sidebar.selectbox("Select Fold Type", ("KFold ", "StratifiedKFold ", "TimeSeriesSplit "))
     n_splits_fold_hyp = st.sidebar.slider("n_splits ", 2, 5)
@@ -800,7 +800,7 @@ if model_tuning == "Apply Hyper Parameter Optimization":
 
         C = [int(x) for x in np.linspace(start=0.001, stop=1000.0, num=10)]
         penalty = ['l2', 'l1']
-        max_iter = [int(x) for x in np.linspace(start=5, stop=500, num=10)]
+        max_iter = [int(x) for x in np.linspace(start=1, stop=500, num=10)]
         solver = ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']
         params["C"] = C
         params["penalty"] = penalty
@@ -818,9 +818,9 @@ if model_tuning == "Apply Hyper Parameter Optimization":
         clf_tune = SVC()
     elif models_name == "XGBoost":
 
-        max_depth = [int(x) for x in np.linspace(start=10, stop=200, num=10)]
+        max_depth = [int(x) for x in np.linspace(start=2, stop=200, num=10)]
         n_estimators = [int(x) for x in np.linspace(start=50, stop=2000, num=10)]
-        subsample = [x for x in np.linspace(start=0.01, stop=0.90, num=4)]
+        subsample = [x for x in np.linspace(start=0.01, stop=1.0, num=4)]
         learning_rate = [x for x in np.linspace(start=0.01, stop=0.90, num=4)]
         colsample_bytree = [x for x in np.linspace(start=0.01, stop=0.90, num=4)]
         min_child_weight = [int(x) for x in np.linspace(start=1, stop=5, num=4)]
@@ -834,15 +834,15 @@ if model_tuning == "Apply Hyper Parameter Optimization":
         clf_tune = XGBClassifier()
     elif models_name == "LightGBM":
 
-        max_depth = [int(x) for x in np.linspace(start=5, stop=200, num=5)]
-        reg_alpha = [int(x) for x in np.linspace(start=2, stop=20, num=4)]
+        max_depth = [int(x) for x in np.linspace(start=-1, stop=200, num=5)]
+        reg_alpha = [x for x in np.linspace(start=0.0, stop=20.0, num=4)]
         n_estimators = [int(x) for x in np.linspace(start=50, stop=2000, num=10)]
         boosting_type = ['gbdt', 'dart', 'goss']
-        reg_lambda = [int(x) for x in np.linspace(start=1, stop=20, num=5)]
+        reg_lambda = [x for x in np.linspace(start=0.001, stop=20.0, num=5)]
         num_leaves = [int(x) for x in np.linspace(start=2, stop=300, num=10)]
         colsample_bytree = [x for x in np.linspace(start=0.1, stop=0.9, num=5)]
         min_child_samples = [int(x) for x in np.linspace(start=1, stop=5, num=3)]
-        min_child_weight = [int(x) for x in np.linspace(start=1, stop=5, num=2)]
+        min_child_weight = [x for x in np.linspace(start=0.001, stop=1.0, num=2)]
         learning_rate = [x for x in np.linspace(start=0.001, stop=0.999, num=3)]
         params["max_depth"] = max_depth
         params["reg_alpha"] = reg_alpha
@@ -865,7 +865,7 @@ if model_tuning == "Apply Hyper Parameter Optimization":
         params["max_features"] = ['auto', 'sqrt', 'log2']
         params["min_samples_leaf"] = [int(x) for x in np.linspace(start=1, stop=10, num=3)]
         params["min_samples_split"] = [int(x) for x in np.linspace(start=2, stop=15, num=3)]
-        params["max_depth"] = [int(x) for x in np.linspace(start=10, stop=1000, num=10)]
+        params["max_depth"] = [int(x) for x in np.linspace(start=1, stop=1000, num=10)]
         clf_tune = RandomForestClassifier()
         iteration = 400
     if hyperop == "RandomizedSearchCV-GridSearchCV":
@@ -944,32 +944,301 @@ params = {params}""")
     if hyperop == "Bayesian Optimization (Hyperopt)":
             params = dict()
             if models_name == "KNN":
-                params["n_neighbors"] = hp.uniform("n_neighbors", 3, 50)
+                params = dict()
+                params["n_neighbors"] = hp.uniform("n_neighbors", 2, 50)
                 params["leaf_size"] = hp.uniform("leaf_size", 1, 50)
-                params['metric'] = ['euclidean', 'manhattan']
-                params["p"] = hp.choice("penalty", [1, 2])
+                params['metric'] = hp.choice("metric",['euclidean', 'manhattan'])
+                params["p"] = hp.choice("p", [1, 2])
 
-                clf_tune = KNeighborsClassifier()
+
+                def objective(params):
+                    model = KNeighborsClassifier(n_neighbors=int(params["n_neighbors"]),
+                                               leaf_size=int(params["leaf_size"]),
+                                               metric=params['metric'],
+                                               p=params["p"])
+                    accuracy = cross_val_score(model, X_train, y_train, cv=fold).mean()
+
+                    # We aim to maximize accuracy, therefore we return it as a negative value
+                    return {'loss': -accuracy, 'status': STATUS_OK}
+
+
+                met = {0 : 'euclidean', 1 : 'manhattan'}
+                pv = {0 :  1, 1 : 2}
+                trials = Trials()
+                best = fmin(fn=objective,
+                            space=params,
+                            algo=tpe.suggest,
+                            max_evals=80,
+                            trials=trials)
+                clf = KNeighborsClassifier(n_neighbors=int(best["n_neighbors"]),
+                                               leaf_size=int(best["leaf_size"]),
+                                               metric=met[best['metric']],
+                                               p=pv[best["p"]]).fit(X_train, y_train)
+
+                y_pred = clf.predict(X_test)
+                confusion_matrix(y_test, y_pred)
+                accuracy_score(y_test, y_pred)
+                classification_report(y_test, y_pred)
+
+                st.code(f"""confusion_matrix Bayesian Optimization (Hyperopt): 
+{confusion_matrix(y_test, y_pred)}""")
+                st.code("Accuracy Score Bayesian Optimization (Hyperopt) {}".format(accuracy_score(y_test, y_pred)))
+                st.sidebar.write("Accuracy {} Score Tuned {}".format(models_name,accuracy_score(y_test, y_pred)))
+                st.code("Classification report Bayesian Optimization (Hyperopt): {}".format(
+                    classification_report(y_test, y_pred)))
+                st.code({f"""#Model {clf}"""})
+                st.write(f"### Code for Bayesian Optimization (Hyperopt) and {models_name}")
+
+                st.code(f"""params = dict()
+if models_name == "KNN":
+params = dict()
+params["n_neighbors"] = hp.uniform("n_neighbors", 2, 50)
+params["leaf_size"] = hp.uniform("leaf_size", 1, 50)
+params['metric'] = hp.choice("metric",['euclidean', 'manhattan'])
+params["p"] = hp.choice("p", [1, 2])
+def objective(params):
+    model = KNeighborsClassifier(n_neighbors=int(params["n_neighbors"]),
+                                leaf_size=int(params["leaf_size"]),
+                                metric=params['metric'],
+                                p=params["p"])
+    accuracy = cross_val_score(model, X_train, y_train, cv={fold}).mean()
+    # We aim to maximize accuracy, therefore we return it as a negative value
+    return {{'loss': -accuracy, 'status': STATUS_OK}}
+met = {{0 : 'euclidean', 1 : 'manhattan'}}
+pv = {{0 :  1, 1 : 2}}
+trials = Trials()
+best = fmin(fn=objective,
+            space=params,
+            algo=tpe.suggest,
+            max_evals=80,
+            trials=trials)
+clf = KNeighborsClassifier(n_neighbors=int(best["n_neighbors"]),
+                            leaf_size=int(best["leaf_size"]),
+                            metric=met[best['metric']],
+                            p=pv[best["p"]]).fit(X_train, y_train)
+
+y_pred = clf.predict(X_test)
+confusion_matrix(y_test, y_pred)
+accuracy_score(y_test, y_pred)
+classification_report(y_test, y_pred)""")
             elif models_name == "Logistic Regression":
-                params["C"] = hp.uniform('min_samples_leaf', 0.01, 1000.0)
-                params["penalty"] = hp.choice("penalty", ['l2', 'l1'])
-                params["max_iter"] = hp.uniform('min_samples_leaf', 5, 500)
+                params = dict()
+                params["C"] = hp.uniform('C', 0.01, 1000)
+                params["max_iter"] = hp.uniform('max_iter', 5, 500)
                 params["solver"] = hp.choice("solver", ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'])
+                params["penalty"] = hp.choice("penalty",["l1","l2"])
 
-                clf_tune = LogisticRegression()
+
+                def objective(params):
+                    model = LogisticRegression( C = params["C"],
+                                                max_iter = int(params["max_iter"]),
+                                                solver = params["solver"],
+                                                penalty = params["penalty"])
+                    accuracy = cross_val_score(model, X_train, y_train, cv=fold).mean()
+
+                    # We aim to maximize accuracy, therefore we return it as a negative value
+                    return {'loss': -accuracy, 'status': STATUS_OK}
+
+
+                sol = {0: 'newton-cg', 1: 'lbfgs', 2: 'liblinear', 3: 'sag', 4: 'saga'}
+                pen = {0: 'l1', 1: 'l2'}
+                trials = Trials()
+                best = fmin(fn=objective,
+                            space=params,
+                            algo=tpe.suggest,
+                            max_evals=80,
+                            trials=trials)
+                clf = LogisticRegression(C=best["C"],
+                                         max_iter = int(best["max_iter"]),
+                                         solver = sol[best["solver"]],
+                                         penalty=pen[best["penalty"]]).fit(X_train, y_train)
+
+                y_pred = clf.predict(X_test)
+                confusion_matrix(y_test, y_pred)
+                accuracy_score(y_test, y_pred)
+                classification_report(y_test, y_pred)
+
+                st.code(f"""confusion_matrix Bayesian Optimization (Hyperopt): 
+{confusion_matrix(y_test, y_pred)}""")
+                st.code("Accuracy Score Bayesian Optimization (Hyperopt) {}".format(accuracy_score(y_test, y_pred)))
+                st.sidebar.write("Accuracy Score Tuned {}".format(accuracy_score(y_test, y_pred)))
+                st.code("Classification report Bayesian Optimization (Hyperopt): {}".format(
+                    classification_report(y_test, y_pred)))
+                st.code({f"""#Model {clf}"""})
+                st.write(f"### Code for Bayesian Optimization (Hyperopt) and {models_name}")
+                st.code(f"""params=dict()
+params["C"] = hp.uniform('C', 0.01, 1000)
+params["max_iter"] = hp.uniform('max_iter', 5, 500)
+params["solver"] = hp.choice("solver", ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'])
+params["penalty"] = hp.choice("penalty",["l1","l2"])
+def objective(params):
+    model = LogisticRegression( C = params["C"],
+                                max_iter = int(params["max_iter"]),
+                                solver = params["solver"],
+                                penalty = params["penalty"])
+    accuracy = cross_val_score(model, X_train, y_train, cv={fold}).mean()
+    # We aim to maximize accuracy, therefore we return it as a negative value
+    return {{'loss': -accuracy, 'status': STATUS_OK}}
+sol = {{0: 'newton-cg', 1: 'lbfgs', 2: 'liblinear', 3: 'sag', 4: 'saga'}}
+pen = {{0: 'l1', 1: 'l2'}}
+trials = Trials()
+best = fmin(fn=objective,
+            space=params,
+            algo=tpe.suggest,
+            max_evals=80,
+            trials=trials)
+clf = LogisticRegression(C=best["C"],
+                        max_iter = int(best["max_iter"]),
+                        solver = sol[best["solver"]],
+                        penalty=pen[best["penalty"]]).fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+confusion_matrix(y_test, y_pred)
+accuracy_score(y_test, y_pred)
+classification_report(y_test, y_pred)""")
+
             elif models_name == "SVM":
-                params["C"] = hp.uniform('min_samples_leaf', 0.01, 1000.0)
-                params["gamma"] = hp.uniform('min_samples_leaf', 0.01, 1000.0)
+                params = dict()
+                params["C"] = hp.uniform("C", 0.01, 1000.0)
+                params["gamma"] = hp.uniform("gamma", 0.01, 1000.0)
 
-                clf_tune = SVC()
+                def objective(params):
+                    model = SVC(C = params["C"],
+                                gamma = params["gamma"])
+                    accuracy = cross_val_score(model, X_train, y_train, cv=fold).mean()
+
+                    # We aim to maximize accuracy, therefore we return it as a negative value
+                    return {'loss': -accuracy, 'status': STATUS_OK}
+
+
+                trials = Trials()
+                best = fmin(fn=objective,
+                            space=params,
+                            algo=tpe.suggest,
+                            max_evals=80,
+                            trials=trials)
+                clf = SVC(C=best["C"],
+                          gamma=best["gamma"]).fit(X_train,y_train)
+
+                y_pred = clf.predict(X_test)
+                confusion_matrix(y_test, y_pred)
+                accuracy_score(y_test, y_pred)
+                classification_report(y_test, y_pred)
+
+                st.code(f"""confusion_matrix Bayesian Optimization (Hyperopt): 
+                {confusion_matrix(y_test, y_pred)}""")
+                st.code("Accuracy Score Bayesian Optimization (Hyperopt) {}".format(accuracy_score(y_test, y_pred)))
+                st.sidebar.write("Accuracy Score Tuned {}".format(accuracy_score(y_test, y_pred)))
+                st.code("Classification report Bayesian Optimization (Hyperopt): {}".format(
+                    classification_report(y_test, y_pred)))
+                st.code({f"""#Model {clf}"""})
+                st.write(f"### Code for Bayesian Optimization (Hyperopt) for {models_name}")
+                st.code(f"""params = dict()
+params["C"] = hp.uniform("C", 0.01, 1000.0)
+params["gamma"] = hp.uniform("gamma", 0.01, 1000.0)
+def objective(params):
+    model = SVC(C = params["C"],
+            gamma = params["gamma"])
+    accuracy = cross_val_score(model, X_train, y_train, cv={fold}).mean()
+    # We aim to maximize accuracy, therefore we return it as a negative value
+    return {{'loss': -accuracy, 'status': STATUS_OK}}
+trials = Trials()
+best = fmin(fn=objective,
+            space=params,
+            algo=tpe.suggest,
+            max_evals=80,
+            trials=trials)
+clf = SVC(C=best["C"],
+          gamma=best["gamma"]).fit(X_train,y_train)
+                
+y_pred = clf.predict(X_test)
+confusion_matrix(y_test, y_pred)
+accuracy_score(y_test, y_pred)
+classification_report(y_test, y_pred)""")
             elif models_name == "XGBoost":
+                params = dict()
                 params["max_depth"] = hp.quniform('max_depth', 10, 1200, 10)
-                params["n_estimators"] = hp.uniform('min_samples_leaf', 20, 2000)
-                params["min_child_weight"] = hp.uniform('min_samples_leaf', 1, 5)
-                params["colsample_bytree"] = hp.uniform('min_samples_leaf', 0.1, 0.9)
-                params["learning_rate"] = hp.uniform('min_samples_leaf', 0.001, 0.999)
-                params["subsample"] = hp.uniform('min_samples_leaf', 0.01, 0.99)
-                clf_tune = XGBClassifier()
+                params["n_estimators"] = hp.uniform("n_estimators", 20, 2000)
+                params["min_child_weight"] = hp.uniform("min_child_weight", 1, 5)
+                params["colsample_bytree"] = hp.uniform("colsample_bytree", 0.1, 0.9)
+                params["learning_rate"] = hp.uniform("learning_rate", 0.001, 0.999)
+                params["subsample"] = hp.uniform("subsample", 0.01, 0.99)
+                boost = {0: 'gbdt', 1: 'dart', 2: 'goss'}
+
+
+                def objective(params):
+                    model = XGBClassifier(max_depth=int(params["max_depth"]),
+                                               n_estimators=int(params["n_estimators"]),
+                                               colsample_bytree=params["colsample_bytree"],
+                                               min_child_weight=int(params["min_child_weight"]),
+                                               subsample=params["subsample"],
+                                               learning_rate=params["learning_rate"])
+                    accuracy = cross_val_score(model, X_train, y_train, cv=fold).mean()
+
+                    # We aim to maximize accuracy, therefore we return it as a negative value
+                    return {'loss': -accuracy, 'status': STATUS_OK}
+
+
+                trials = Trials()
+                best = fmin(fn=objective,
+                            space=params,
+                            algo=tpe.suggest,
+                            max_evals=80,
+                            trials=trials)
+
+
+
+                clf = XGBClassifier(max_depth=int(best["max_depth"]),
+                                         n_estimators=int(best["n_estimators"]),
+                                         colsample_bytree=best["colsample_bytree"],
+                                         min_child_weight=int(best["min_child_weight"]),
+                                         subsample=best["subsample"],
+                                         learning_rate=best["learning_rate"]).fit(X_train, y_train)
+                y_pred = clf.predict(X_test)
+                confusion_matrix(y_test, y_pred)
+                accuracy_score(y_test, y_pred)
+                classification_report(y_test, y_pred)
+
+                st.code(f"""confusion_matrix Bayesian Optimization (Hyperopt): 
+{confusion_matrix(y_test, y_pred)}""")
+                st.code("Accuracy Score Bayesian Optimization (Hyperopt) {}".format(accuracy_score(y_test, y_pred)))
+                st.sidebar.write("Accuracy Score Tuned {}".format(accuracy_score(y_test, y_pred)))
+                st.code("Classification report Bayesian Optimization (Hyperopt): {}".format(
+                    classification_report(y_test, y_pred)))
+                st.code({f"""#Model {clf}"""})
+                st.write("### Code for Bayesian Optimization (Hyperopt)")
+                st.code(f"""params = dict()
+params["max_depth"] = hp.quniform('max_depth', 10, 1200, 10)
+params["n_estimators"] = hp.uniform("n_estimators", 20, 2000)
+params["min_child_weight"] = hp.uniform("min_child_weight", 1, 5)
+params["colsample_bytree"] = hp.uniform("colsample_bytree", 0.1, 0.9)
+params["learning_rate"] = hp.uniform("learning_rate", 0.001, 0.999)
+params["subsample"] = hp.uniform("subsample", 0.01, 0.99)
+def objective(params):
+    model = XGBClassifier(max_depth=int(params["max_depth"]),
+                          n_estimators=int(params["n_estimators"]),
+                          colsample_bytree=params["colsample_bytree"],
+                          min_child_weight=int(params["min_child_weight"]),
+                          subsample=params["subsample"],
+                         learning_rate=params["learning_rate"])
+    accuracy = cross_val_score(model, X_train, y_train, cv={fold}).mean()
+    # We aim to maximize accuracy, therefore we return it as a negative value
+    return {{'loss': -accuracy, 'status': STATUS_OK}}
+trials = Trials()
+best = fmin(fn=objective,
+            space=params,
+            algo=tpe.suggest,
+            max_evals=80,
+            trials=trials)
+clf = XGBClassifier(max_depth=int(best["max_depth"]),
+                    n_estimators=int(best["n_estimators"]),
+                    colsample_bytree=best["colsample_bytree"],
+                    min_child_weight=int(best["min_child_weight"]),
+                    subsample=best["subsample"],
+                    learning_rate=best["learning_rate"]).fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+confusion_matrix(y_test, y_pred)
+accuracy_score(y_test, y_pred)
+classification_report(y_test, y_pred)""")
             elif models_name == "LightGBM":
                 params=dict()
                 params["max_depth"] = hp.quniform('max_depth', 10, 1200, 10)
@@ -1028,6 +1297,61 @@ params = {params}""")
                 st.code("Accuracy Score Bayesian Optimization (Hyperopt) {}".format(accuracy_score(y_test, y_pred)))
                 st.sidebar.write("Accuracy Score Tuned {}".format(accuracy_score(y_test, y_pred)))
                 st.code("Classification report Bayesian Optimization (Hyperopt): {}".format(classification_report(y_test, y_pred)))
+                st.write("### Code for Bayesian Optimization (Hyperopt)")
+                st.code(f"""params=dict()
+params["max_depth"] = hp.quniform('max_depth', 10, 1200, 10)
+params["reg_alpha"] = hp.uniform("reg_alpha", 2, 20)
+params["n_estimators"] = hp.quniform("n_estimators", 20, 2000,10)
+params["boosting_type"] = hp.choice("boosting_type", ['gbdt', 'dart', 'goss'])
+params["reg_lambda"] = hp.uniform("reg_lambda", 1, 20)
+params["num_leaves"] = hp.uniform("num_leaves", 2, 300)
+params["colsample_bytree"] = hp.uniform("colsample_bytree", 0.1, 0.9)
+params["min_child_weight"] = hp.uniform("min_child_weight", 1, 5)
+params["min_child_samples"] = hp.uniform("min_child_samples", 1, 5)
+params["learning_rate"] = hp.uniform("learning_rate", 0.001, 0.999)
+boost = {{0: 'gbdt', 1: 'dart',2:'goss'}}
+
+def objective(params):
+    model = lgb.LGBMClassifier(max_depth = int(params["max_depth"]),
+                                reg_alpha = params["reg_alpha"],
+                                n_estimators = int(params["n_estimators"]),
+                                boosting_type = params["boosting_type"],
+                                reg_lambda = params["reg_lambda"],
+                                num_leaves = int(params["num_leaves"]),
+                                colsample_bytree = params["colsample_bytree"],
+                                min_child_weight = int(params["min_child_weight"]),
+                                min_child_samples = int(params["min_child_samples"]),
+                                learning_rate = params["learning_rate"])
+    accuracy = cross_val_score(model, X_train, y_train, cv = {fold}).mean()
+
+    # We aim to maximize accuracy, therefore we return it as a negative value
+    return {{'loss': -accuracy, 'status': STATUS_OK}}
+
+
+trials = Trials()
+best = fmin(fn=objective,
+            space=params,
+            algo=tpe.suggest,
+            max_evals=80,
+            trials=trials)
+
+boost = {{0: 'gbdt', 1: 'dart', 2 : 'goss'}}
+
+clf = lgb.LGBMClassifier(max_depth = int(best["max_depth"]),
+                        reg_alpha = best["reg_alpha"],
+                        n_estimators = int(best["n_estimators"]),
+                        boosting_type = boost[best["boosting_type"]],
+                        reg_lambda  = best["reg_lambda"],
+                        num_leaves= int(best["num_leaves"]),
+                        colsample_bytree = best["colsample_bytree"],
+                        min_child_weight = int(best["min_child_weight"]),
+                        min_child_samples = int(best["min_child_samples"]),
+                        learning_rate = best["learning_rate"]).fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+confusion_matrix(y_test, y_pred)
+accuracy_score(y_test, y_pred)
+classification_report(y_test, y_pred) """)
+
 
             else:
 
@@ -1035,9 +1359,9 @@ params = {params}""")
                 params["n_estimators"] = hp.choice('n_estimators',[10,50,300,750,1200,1300,1500])
                 params["criterion"] = hp.choice('criterion', ['entropy', 'gini'])
                 params["max_features"] = hp.choice('max_features', ['auto', 'sqrt','log2', None])
-                params["min_samples_leaf"] = hp.uniform('min_samples_leaf', 0, 0.5)
-                params["min_samples_split"] = hp.uniform ('min_samples_split', 0, 1)
-                params["max_depth"] = hp.quniform('max_depth', 10, 1200, 10)
+                params["min_samples_leaf"] = hp.uniform('min_samples_leaf', 1, 10)
+                params["min_samples_split"] = hp.uniform ('min_samples_split', 2, 20)
+                params["max_depth"] = hp.quniform('max_depth', 2, 1200, 10)
                 clf_tune = RandomForestClassifier()
 
 
@@ -1116,6 +1440,97 @@ params = {params}""")
     accuracy_score(y_test, y_pred)
     classification_report(y_test, y_pred)""")
 
+    if hyperop=="Genetic Algorithms (TPOT Classifier)":
+        params = dict()
+
+        if models_name == "KNN":
+            K = [int(x) for x in np.linspace(start=3, stop=20, num=10)]
+            params["n_neighbors"] = K
+            leaf_size = [int(x) for x in np.linspace(start=1, stop=50, num=10)]
+            params["leaf_size"] = leaf_size
+            p = [1, 2]
+            params['metric'] = ['euclidean', 'manhattan']
+            params["p"] = p
+            iteration = 100
+            clf_tune = KNeighborsClassifier()
+        elif models_name == "Logistic Regression":
+
+            C = [int(x) for x in np.linspace(start=0.001, stop=1000.0, num=10)]
+            penalty = ['l2', 'l1']
+            max_iter = [int(x) for x in np.linspace(start=1, stop=500, num=10)]
+            solver = ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']
+            params["C"] = C
+            params["penalty"] = penalty
+            params["max_iter"] = max_iter
+            params["solver"] = solver
+            iteration = 200
+            clf_tune = LogisticRegression()
+        elif models_name == "SVM":
+
+            C = [int(x) for x in np.linspace(start=0.001, stop=1000.0, num=10)]
+            params["C"] = C
+            gamma_range = [int(x) for x in np.linspace(start=0.01, stop=1000.0, num=10)]
+            params["gamma"] = gamma_range
+            iteration = 100
+            clf_tune = SVC()
+        elif models_name == "XGBoost":
+
+            max_depth = [int(x) for x in np.linspace(start=2, stop=200, num=10)]
+            n_estimators = [int(x) for x in np.linspace(start=50, stop=2000, num=10)]
+            subsample = [x for x in np.linspace(start=0.01, stop=1.0, num=4)]
+            learning_rate = [x for x in np.linspace(start=0.01, stop=0.90, num=4)]
+            colsample_bytree = [x for x in np.linspace(start=0.01, stop=0.90, num=4)]
+            min_child_weight = [int(x) for x in np.linspace(start=1, stop=5, num=4)]
+            params["max_depth"] = max_depth
+            params["n_estimators"] = n_estimators
+            params["min_child_weight"] = min_child_weight
+            params["colsample_bytree"] = colsample_bytree
+            params["learning_rate"] = learning_rate
+            params["subsample"] = subsample
+            iteration = 200
+            clf_tune = XGBClassifier()
+        elif models_name == "LightGBM":
+
+            max_depth = [int(x) for x in np.linspace(start=-1, stop=200, num=5)]
+            reg_alpha = [x for x in np.linspace(start=0.0, stop=20.0, num=4)]
+            n_estimators = [int(x) for x in np.linspace(start=50, stop=2000, num=10)]
+            boosting_type = ['gbdt', 'dart', 'goss']
+            reg_lambda = [x for x in np.linspace(start=0.001, stop=20.0, num=5)]
+            num_leaves = [int(x) for x in np.linspace(start=2, stop=300, num=10)]
+            colsample_bytree = [x for x in np.linspace(start=0.1, stop=0.9, num=5)]
+            min_child_samples = [int(x) for x in np.linspace(start=1, stop=5, num=3)]
+            min_child_weight = [x for x in np.linspace(start=0.001, stop=1.0, num=5)]
+            learning_rate = [x for x in np.linspace(start=0.001, stop=0.999, num=5)]
+            params["max_depth"] = max_depth
+            params["reg_alpha"] = reg_alpha
+            params["n_estimators"] = n_estimators
+            params["boosting_type"] = boosting_type
+            params["reg_lambda"] = reg_lambda
+            params["num_leaves"] = num_leaves
+            params["colsample_bytree"] = colsample_bytree
+            params["min_child_weight"] = min_child_weight
+            params["min_child_samples"] = min_child_samples
+            params["learning_rate"] = learning_rate
+            iteration = 200
+            clf_tune = lgb.LGBMClassifier()
+
+        else:
+
+            params["n_estimators"] = [int(x) for x in np.linspace(start=200, stop=2000, num=10)]
+            params["criterion"] = ['entropy', 'gini']
+            params["max_features"] = ['auto', 'sqrt', 'log2']
+            params["min_samples_leaf"] = [int(x) for x in np.linspace(start=1, stop=10, num=5)]
+            params["min_samples_split"] = [int(x) for x in np.linspace(start=2, stop=15, num=3)]
+            params["max_depth"] = [int(x) for x in np.linspace(start=1, stop=1000, num=10)]
+            clf_tune = RandomForestClassifier()
+            iteration = 400
+        tpot_classifier = TPOTClassifier(generations=5, population_size=24, offspring_size=12,
+                                         verbosity=2, early_stop=12,
+                                         config_dict={clf_tune : params},
+                                         cv=4, scoring='accuracy')
+        tpot_classifier.fit(X_train, y_train)
+        
+        
 
 
 
