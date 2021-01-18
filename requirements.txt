@@ -7,4 +7,5 @@ missingno
 seaborn
 xgboost
 lightgbm
+hyperopt
 

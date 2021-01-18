@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import pickle
@@ -24,6 +24,11 @@ import scipy.stats as stat
 from xgboost import XGBClassifier
 import lightgbm as lgb
 import re
+from sklearn.model_selection import cross_val_score,KFold, GroupKFold, StratifiedKFold, TimeSeriesSplit
+from sklearn.model_selection import RandomizedSearchCV,GridSearchCV
+from hyperopt import hp,fmin,tpe,STATUS_OK,Trials
+#PAGE= st.sidebar.radio("Page",["Train","Test"])
+#if PAGE=="Train":
 st.title("Create Your Own Model and Generate Code")
 st.image('./automated-machine-learning.png')
 st.write("""
@@ -616,16 +621,16 @@ def add_parameter_ui(clf_name):
         params["subsample"] = subsample
     elif clf_name == "LightGBM":
         st.sidebar.write("Select Parameters")
-        max_depth = st.sidebar.slider("max_depth", 5, 200)
-        reg_alpha = st.sidebar.slider("reg_alpha", 1, 20)
-        n_estimators = st.sidebar.slider("n_estimators", 50, 2000)
+        max_depth = st.sidebar.slider("max_depth", 5, 200,30)
+        reg_alpha = st.sidebar.slider("reg_alpha", 1, 20,5)
+        n_estimators = st.sidebar.slider("n_estimators", 50, 2000,100)
         boosting_type = st.sidebar.selectbox("boosting_type", ('gbdt', 'dart', 'goss'))
-        reg_lambda = st.sidebar.slider("reg_lambda", 1,20)
-        num_leaves = st.sidebar.slider("num_leaves", 2, 300)
+        reg_lambda = st.sidebar.slider("reg_lambda", 1,20,5)
+        num_leaves = st.sidebar.slider("num_leaves", 2, 300,50)
         colsample_bytree = st.sidebar.slider("colsample_bytree", 0.01,0.90)
         min_child_samples = st.sidebar.slider("min_child_samples", 1, 5)
         min_child_weight = st.sidebar.slider("min_child_weight", 1, 5)
-        learning_rate = st.sidebar.slider("learning_rate", 0.001, 0.999)
+        learning_rate = st.sidebar.slider("learning_rate", 0.001, 0.999,value=0.1)
         params["max_depth"] =  max_depth
         params["reg_alpha"] = reg_alpha
         params["n_estimators"] = n_estimators
@@ -688,15 +693,34 @@ def get_classifier(clf_name,params):
 clf = get_classifier(models_name,params)
 st.cache()
 df_train = df
-X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2, random_state=42)
-clf.fit(X_train,y_train)
-y_pred = clf.predict(X_test)
-acc = accuracy_score(y_test, y_pred)
-st.sidebar.write(f"classifier = {models_name}")
-st.sidebar.write(f"accuracy = {acc}")
-st.write(f"classifier = {models_name}")
-st.write(f"accuracy = {acc}")
+
+use_cv =st.sidebar.selectbox("Cross Validation",("Do not use Cross Validation","Use Cross Validation"))
+if use_cv == "Use Cross Validation":
+    fold_cv = st.sidebar.selectbox("Select Fold Type",("KFold","StratifiedKFold","TimeSeriesSplit"))
+    n_splits_fold =st.sidebar.slider("n_splits",2,10)
+    if fold_cv == "KFold":
+        fold = KFold(n_splits=n_splits_fold)
+    elif fold_cv == "StratifiedKFold":
+        fold = StratifiedKFold(n_splits=n_splits_fold)
+    elif fold_cv == "TimeSeriesSplit":
+        fold = TimeSeriesSplit(n_splits=n_splits_fold)
+    acc = cross_val_score(clf, df, y, cv= fold, scoring="accuracy")
+    st.sidebar.write(f"classifier = {models_name}")
+    st.sidebar.write(f"accuracy for each fold = {acc}")
+    st.sidebar.write(f"accuracy mean = {acc.mean()}")
+    st.write(f"accuracy for each fold = {acc}")
+    st.write(f"accuracy mean = {acc.mean()}")
+else:
+    X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2, random_state=42)
+    clf.fit(X_train,y_train)
+    y_pred = clf.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    st.sidebar.write(f"classifier = {models_name}")
+    st.sidebar.write(f"accuracy = {acc}")
+    st.write(f"classifier = {models_name}")
+    st.write(f"accuracy = {acc}")
 if st.button("Generate Codes for Machine Learning"):
+
     if models_name == "KNN":
         st.code(f"""clf = KNeighborsClassifier(n_neighbors={params["K"]},leaf_size={params["leaf_size"]},p={params["p"]})""")
     elif models_name == "SVM":
@@ -734,10 +758,326 @@ clf = RandomForestClassifier(n_estimators={params["n_estimators"]},
                                 min_samples_leaf={params["min_samples_leaf"]},
                                 min_samples_split={params["min_samples_split"]} ,
                                 random_state=42)""")
-    st.code(f"""X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2,random_state=42)
+    if use_cv == "Do not use Cross Validation":
+        st.code(f"""X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2,random_state=42)
 clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 acc = accuracy_score(y_test, y_pred)""")
+    else:
+        st.code(f"""acc = cross_val_score(clf, df, y, cv={fold}, scoring="accuracy")""")
+st.write(""" ## Model Tuning """)
+model_tuning = st.sidebar.selectbox("Select Option for Model Tuning",("Do not Apply Hyper Parameter Optimization ","Apply Hyper Parameter Optimization"))
+optimizers =["Select","RandomizedSearchCV-GridSearchCV", "Bayesian Optimization (Hyperopt)", "Sequential Model Based Optimization",
+     "Optuna- Automate Hyperparameter Tuning", "Genetic Algorithms (TPOT Classifier)"]
+if model_tuning == "Apply Hyper Parameter Optimization":
+    fold_cv_hyp = st.sidebar.selectbox("Select Fold Type", ("KFold ", "StratifiedKFold ", "TimeSeriesSplit "))
+    n_splits_fold_hyp = st.sidebar.slider("n_splits ", 2, 5)
+    if fold_cv_hyp == "KFold ":
+        fold = KFold(n_splits=n_splits_fold_hyp)
+    elif fold_cv_hyp == "StratifiedKFold ":
+        fold = StratifiedKFold(n_splits=n_splits_fold_hyp)
+    elif fold_cv_hyp == "TimeSeriesSplit ":
+        fold = TimeSeriesSplit(n_splits=n_splits_fold_hyp)
+    X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2, random_state=42)
+    hyperop = st.sidebar.selectbox("Select Optimizer",optimizers)
+    params = dict()
+
+    if models_name == "KNN":
+        K = [int(x) for x in np.linspace(start=3, stop=20, num=10)]
+        params["n_neighbors"] = K
+        leaf_size = [int(x) for x in np.linspace(start=1, stop=50, num=10)]
+        params["leaf_size"] = leaf_size
+        p = [1, 2]
+        params['metric'] = ['euclidean', 'manhattan']
+        params["p"] = p
+        iteration = 100
+        clf_tune = KNeighborsClassifier()
+    elif models_name == "Logistic Regression":
+
+        C = [int(x) for x in np.linspace(start=0.001, stop=1000.0, num=10)]
+        penalty = ['l2', 'l1']
+        max_iter = [int(x) for x in np.linspace(start=5, stop=500, num=10)]
+        solver = ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']
+        params["C"] = C
+        params["penalty"] = penalty
+        params["max_iter"] = max_iter
+        params["solver"] = solver
+        iteration = 200
+        clf_tune = LogisticRegression()
+    elif models_name == "SVM":
+
+        C = [int(x) for x in np.linspace(start=0.001, stop=1000.0, num=10)]
+        params["C"] = C
+        gamma_range = [int(x) for x in np.linspace(start=0.01, stop=1000.0, num=10)]
+        params["gamma"] = gamma_range
+        iteration = 100
+        clf_tune = SVC()
+    elif models_name == "XGBoost":
+
+        max_depth = [int(x) for x in np.linspace(start=10, stop=200, num=10)]
+        n_estimators = [int(x) for x in np.linspace(start=50, stop=2000, num=10)]
+        subsample = [x for x in np.linspace(start=0.01, stop=0.90, num=4)]
+        learning_rate = [x for x in np.linspace(start=0.01, stop=0.90, num=4)]
+        colsample_bytree = [x for x in np.linspace(start=0.01, stop=0.90, num=4)]
+        min_child_weight = [int(x) for x in np.linspace(start=1, stop=5, num=4)]
+        params["max_depth"] = max_depth
+        params["n_estimators"] = n_estimators
+        params["min_child_weight"] = min_child_weight
+        params["colsample_bytree"] = colsample_bytree
+        params["learning_rate"] = learning_rate
+        params["subsample"] = subsample
+        iteration = 200
+        clf_tune = XGBClassifier()
+    elif models_name == "LightGBM":
+
+        max_depth = [int(x) for x in np.linspace(start=5, stop=200, num=5)]
+        reg_alpha = [int(x) for x in np.linspace(start=2, stop=20, num=4)]
+        n_estimators = [int(x) for x in np.linspace(start=50, stop=2000, num=10)]
+        boosting_type = ['gbdt', 'dart', 'goss']
+        reg_lambda = [int(x) for x in np.linspace(start=1, stop=20, num=5)]
+        num_leaves = [int(x) for x in np.linspace(start=2, stop=300, num=10)]
+        colsample_bytree = [x for x in np.linspace(start=0.1, stop=0.9, num=5)]
+        min_child_samples = [int(x) for x in np.linspace(start=1, stop=5, num=3)]
+        min_child_weight = [int(x) for x in np.linspace(start=1, stop=5, num=2)]
+        learning_rate = [x for x in np.linspace(start=0.001, stop=0.999, num=3)]
+        params["max_depth"] = max_depth
+        params["reg_alpha"] = reg_alpha
+        params["n_estimators"] = n_estimators
+        params["boosting_type"] = boosting_type
+        params["reg_lambda"] = reg_lambda
+        params["num_leaves"] = num_leaves
+        params["colsample_bytree"] = colsample_bytree
+        params["min_child_weight"] = min_child_weight
+        params["min_child_samples"] = min_child_samples
+        params["learning_rate"] = learning_rate
+        iteration = 200
+        clf_tune = lgb.LGBMClassifier()
+
+    else:
+
+
+        params["n_estimators"] = [int(x) for x in np.linspace(start=200, stop=2000, num=10)]
+        params["criterion"] = ['entropy', 'gini']
+        params["max_features"] = ['auto', 'sqrt', 'log2']
+        params["min_samples_leaf"] = [int(x) for x in np.linspace(start=1, stop=10, num=3)]
+        params["min_samples_split"] = [int(x) for x in np.linspace(start=2, stop=15, num=3)]
+        params["max_depth"] = [int(x) for x in np.linspace(start=10, stop=1000, num=10)]
+        clf_tune = RandomForestClassifier()
+        iteration = 400
+    if hyperop == "RandomizedSearchCV-GridSearchCV":
+
+        st.code(f"""#Parameter for RandomizedSearchCV 
+params = {params}""")
+
+        #RandomizedSearchCV
+
+        clf_randomcv = RandomizedSearchCV(estimator=clf_tune,
+                                         param_distributions=params,
+                                         n_iter=iteration,
+                                         cv=fold,
+                                         verbose=2,
+                                         random_state=100,
+                                         n_jobs=-1)
+
+
+        clf_randomcv.fit(X_train, y_train)
+        st.code(f"""#RandomizedSearchCV best parameters 
+{clf_randomcv.best_params_}""")
+        st.code(f"""#RandomizedSearchCV 
+{clf_randomcv}""")
+        st.code(f"""#RandomizedSearchCV best estimator 
+{clf_randomcv.best_estimator_}""")
+        clf = clf_randomcv.best_estimator_
+        y_pred = clf.predict(X_test)
+        confusion_matrix(y_test, y_pred)
+        accuracy_score(y_test, y_pred)
+        classification_report(y_test, y_pred)
+        st.write("confusion_matrix RandomizedSearchCV: {}".format(confusion_matrix(y_test, y_pred)))
+        st.write("Accuracy Score RandomizedSearchCV {}".format(accuracy_score(y_test, y_pred)))
+        st.sidebar.write("Accuracy Score RandomizedSearchCV : {}".format(accuracy_score(y_test, y_pred)))
+        st.write("Classification report RandomizedSearchCV: {}".format(classification_report(y_test, y_pred)))
+        st.cache()
+
+        #if st.sidebar.button("Continue GridSearchCV"):
+        st.write("### GridSearchCV")
+        grid_params = dict()
+        for key, value in clf_randomcv.best_params_.items():
+            if type(value) == str:
+                grid_params[key] = [value]
+            elif type(value) == float:
+                grid_params[key] = [value, 2 * value, 3 * value, value / 2, value / 3]
+            elif value > 100:
+                grid_params[key] = [value, value + 20, value - 20, value + 40, value - 40]
+            elif (value > 10) & (value < 100):
+                grid_params[key] = [value, value + 5, value - 5, value + 3, value - 3]
+            elif value < 10:
+                grid_params[key] = [value, value + 1, value - 1]
+            elif value == 1:
+                grid_params[key] = [value, value + 1]
+            elif value == 2:
+                grid_params[key] = [value, value + 1, value + 2]
+
+        st.code(f"""Parameters for GridSearchCV
+{grid_params}""")
+        grid_search = GridSearchCV(estimator=clf_tune, param_grid=grid_params, cv=fold, n_jobs=-1, verbose=2)
+        grid_search.fit(X_train, y_train)
+        st.code(f"""#GridSearchCV best parameters 
+{grid_search.best_params_}""")
+        st.code(f"""#GridSearchCV 
+{grid_search}""")
+        st.code(f"""#GridSearchCV best estimator 
+{grid_search.best_estimator_}""")
+        clf_grid = grid_search.best_estimator_
+        y_pred = clf_grid.predict(X_test)
+
+        st.cache()
+    if hyperop == "Bayesian Optimization (Hyperopt)":
+            params = dict()
+            if models_name == "KNN":
+                params["n_neighbors"] = hp.uniform("n_neighbors", 3, 50)
+                params["leaf_size"] = hp.uniform("leaf_size", 1, 50)
+                params['metric'] = ['euclidean', 'manhattan']
+                params["p"] = hp.choice("penalty", [1, 2])
+
+                clf_tune = KNeighborsClassifier()
+            elif models_name == "Logistic Regression":
+                params["C"] = hp.uniform('min_samples_leaf', 0.01, 1000.0)
+                params["penalty"] = hp.choice("penalty", ['l2', 'l1'])
+                params["max_iter"] = hp.uniform('min_samples_leaf', 5, 500)
+                params["solver"] = hp.choice("solver", ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'])
+
+                clf_tune = LogisticRegression()
+            elif models_name == "SVM":
+                params["C"] = hp.uniform('min_samples_leaf', 0.01, 1000.0)
+                params["gamma"] = hp.uniform('min_samples_leaf', 0.01, 1000.0)
+
+                clf_tune = SVC()
+            elif models_name == "XGBoost":
+                params["max_depth"] = hp.quniform('max_depth', 10, 1200, 10)
+                params["n_estimators"] = hp.uniform('min_samples_leaf', 20, 2000)
+                params["min_child_weight"] = hp.uniform('min_samples_leaf', 1, 5)
+                params["colsample_bytree"] = hp.uniform('min_samples_leaf', 0.1, 0.9)
+                params["learning_rate"] = hp.uniform('min_samples_leaf', 0.001, 0.999)
+                params["subsample"] = hp.uniform('min_samples_leaf', 0.01, 0.99)
+                clf_tune = XGBClassifier()
+            elif models_name == "LightGBM":
+                params["max_depth"] = hp.quniform('max_depth', 10, 1200, 10)
+                params["reg_alpha"] = hp.uniform('min_samples_leaf', 2, 20)
+                params["n_estimators"] = hp.uniform('min_samples_leaf', 20, 2000)
+                params["boosting_type"] = hp.choice("boosting_type", ['gbdt', 'dart', 'goss'])
+                params["reg_lambda"] = hp.uniform('min_samples_leaf', 1, 20)
+                params["num_leaves"] = hp.uniform('min_samples_leaf', 2, 300)
+                params["colsample_bytree"] = hp.uniform('min_samples_leaf', 0.1, 0.9)
+                params["min_child_weight"] = hp.uniform('min_samples_leaf', 1, 5)
+                params["min_child_samples"] = hp.uniform('min_samples_leaf', 1, 5)
+                params["learning_rate"] = hp.uniform('min_samples_leaf', 0.001, 0.999)
+                clf_tune = lgb.LGBMClassifier()
+
+            else:
+
+                params = dict()
+                params["n_estimators"] = hp.choice('n_estimators',[10,50,300,750,1200,1300,1500])
+                params["criterion"] = hp.choice('criterion', ['entropy', 'gini'])
+                params["max_features"] = hp.choice('max_features', ['auto', 'sqrt','log2', None])
+                params["min_samples_leaf"] = hp.uniform('min_samples_leaf', 0, 0.5)
+                params["min_samples_split"] = hp.uniform ('min_samples_split', 0, 1)
+                params["max_depth"] = hp.quniform('max_depth', 10, 1200, 10)
+                clf_tune = RandomForestClassifier()
+
+
+                def objective(params):
+                    model = RandomForestClassifier(criterion=params['criterion'],
+                                                   max_depth=params['max_depth'],
+                                                   max_features=params['max_features'],
+                                                   min_samples_leaf=params['min_samples_leaf'],
+                                                   min_samples_split=params['min_samples_split'],
+                                                   n_estimators=params['n_estimators'],
+                                                   )
+                    accuracy = cross_val_score(clf_tune,df, y, cv = fold).mean()
+
+                    # We aim to maximize accuracy, therefore we return it as a negative value
+                    return {'loss': -accuracy, 'status': STATUS_OK}
+
+
+                trials = Trials()
+                best = fmin(fn=objective,
+                            space=params,
+                            algo=tpe.suggest,
+                            max_evals=80,
+                            trials=trials)
+
+                crit = {0: 'entropy', 1: 'gini'}
+                feat = {0: 'auto', 1: 'sqrt', 2: 'log2', 3: None}
+                est = {0: 10, 1: 50, 2: 300, 3: 750, 4: 1200, 5: 1300, 6: 1500}
+
+                clf = RandomForestClassifier(criterion=crit[best['criterion']], max_depth=best['max_depth'],
+                                                       max_features=feat[best['max_features']],
+                                                       min_samples_leaf=best['min_samples_leaf'],
+                                                       min_samples_split=best['min_samples_split'],
+                                                       n_estimators=est[best['n_estimators']]).fit(X_train,y_train)
+                y_pred = clf.predict(X_test)
+                confusion_matrix(y_test, y_pred)
+                accuracy_score(y_test, y_pred)
+                classification_report(y_test, y_pred)
+                st.code("confusion_matrix Bayesian Optimization (Hyperopt): {}".format(confusion_matrix(y_test, y_pred)))
+                st.code("Accuracy Score Bayesian Optimization (Hyperopt) {}".format(accuracy_score(y_test, y_pred)))
+                st.sidebar.write("Accuracy Score Tuned {}".format(accuracy_score(y_test, y_pred)))
+                st.code("Classification report Bayesian Optimization (Hyperopt): {}".format(classification_report(y_test, y_pred)))
+                if st.button("Generate Code for Bayesian Optimization"):
+                    st.code("""
+    params = dict()
+    params["n_estimators"] = hp.choice('n_estimators',[10,50,300,750,1200,1300,1500])
+    params["criterion"] = hp.choice('criterion', ['entropy', 'gini'])
+    params["max_features"] = hp.choice('max_features', ['auto', 'sqrt','log2', None])
+    params["min_samples_leaf"] = hp.uniform('min_samples_leaf', 0, 0.5)
+    params["min_samples_split"] = hp.uniform ('min_samples_split', 0, 1)
+    params["max_depth"] = hp.quniform('max_depth', 10, 1200, 10)
+
+
+
+    def objective(clf_tune,params):
+        accuracy = cross_val_score(clf_tune,df, y,fit_params=params, cv = fold).mean()
+        # We aim to maximize accuracy, therefore we return it as a negative value
+        return {'loss': -accuracy, 'status': STATUS_OK}
+    trials = Trials()
+    best = fmin(fn=objective,
+                space=params,
+                algo=tpe.suggest,
+                max_evals=80,
+                trials=trials)
+
+    crit = {0: 'entropy', 1: 'gini'}
+    feat = {0: 'auto', 1: 'sqrt', 2: 'log2', 3: None}
+    est = {0: 10, 1: 50, 2: 300, 3: 750, 4: 1200, 5: 1300, 6: 1500}
+
+    clf = RandomForestClassifier(criterion=crit[best['criterion']], max_depth=best['max_depth'],
+                                max_features=feat[best['max_features']],
+                                min_samples_leaf=best['min_samples_leaf'],
+                                min_samples_split=best['min_samples_split'],
+                                n_estimators=est[best['n_estimators']]).fit(X_train,y_train)
+    y_pred = clf.predict(X_test)
+    confusion_matrix(y_test, y_pred)
+    accuracy_score(y_test, y_pred)
+    classification_report(y_test, y_pred)""")
+
+
+
+
+
+else:
+    st.write("You do not apply any Hyper Parameter Optimization")
+    st.markdown(f"""You can apply these optimizers.
+
+        - RandomizedSearchCV-GridSearchCV (sequentially)
+        
+        - Bayesian Optimization (Hyperopt)
+         
+        - Sequential Model Based Optimization
+        
+        - Optuna- Automate Hyperparameter Tuning
+        
+        - Genetic Algorithms (TPOT Classifier) """)
+st.cache()
 
 st.write(""" ## Download Model """)
 st.cache()
