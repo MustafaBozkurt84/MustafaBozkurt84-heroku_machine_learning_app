@@ -917,18 +917,24 @@ params = {params}""")
             elif value == 2:
                 grid_params[key] = [value, value + 1, value + 2]
 
-        st.code(f"""Parameters for GridSearchCV
-{grid_params}""")
+
         grid_search = GridSearchCV(estimator=clf_tune, param_grid=grid_params, cv=fold, n_jobs=-1, verbose=2)
         grid_search.fit(X_train, y_train)
-        st.code(f"""#GridSearchCV best parameters 
-{grid_search.best_params_}""")
+
+        clf_grid = grid_search.best_estimator_
+        y_pred = clf_grid.predict(X_test)
+        confusion_matrix(y_test, y_pred)
+        accuracy_score(y_test, y_pred)
+        classification_report(y_test, y_pred)
         st.code(f"""#GridSearchCV 
 {grid_search}""")
         st.code(f"""#GridSearchCV best estimator 
 {grid_search.best_estimator_}""")
-        clf_grid = grid_search.best_estimator_
-        y_pred = clf_grid.predict(X_test)
+        st.code("confusion_matrix GridSearchCV: {}".format(confusion_matrix(y_test, y_pred)))
+        st.code("Accuracy Score GridSearchCV {}".format(accuracy_score(y_test, y_pred)))
+        st.sidebar.write("Accuracy Score Tuned {}".format(accuracy_score(y_test, y_pred)))
+        st.code(
+            "Classification report GridSearchCV: {}".format(classification_report(y_test, y_pred)))
 
         st.cache()
     if hyperop == "Bayesian Optimization (Hyperopt)":
