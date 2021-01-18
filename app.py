@@ -345,13 +345,13 @@ def allonehotencoding(df):
             unique_value=len(df[i].value_counts().sort_values(ascending=False).head(10).index)
             if unique_value >10:
                 for categories in (df[i].value_counts().sort_values(ascending=False).head(10).index):
-                    df[i+"_"+categories]=np.where(df[i]==categories,1 ,0)
-                    encode_list.append(i + "_" + categories)
+                    df[i+categories]=np.where(df[i]==categories,1 ,0)
+                    encode_list.append(i +  categories)
 
             else:
                 for categories in (df[i].value_counts().sort_values(ascending=False).head(unique_value-1).index):
-                    df[i + "_" + categories] = np.where(df[i] == categories, 1, 0)
-                    encode_list.append(i + "_" + categories)
+                    df[i + categories] = np.where(df[i] == categories, 1, 0)
+                    encode_list.append(i  + categories)
 
     return df,encode_list
 num_cat_col=len(df.select_dtypes(include=["object"]).columns)
@@ -371,10 +371,10 @@ def allonehotencoding(df):
             unique_value=len(df[i].value_counts().sort_values(ascending=False).index)
             if unique_value >10:
                 for categories in (df[i].value_counts().sort_values(ascending=False).head(10).index):
-                    df[i+"_"+categories]=np.where(df[i]==categories,1 ,0)
+                    df[i+categories]=np.where(df[i]==categories,1 ,0)
             else:
                 for categories in (df[i].value_counts().sort_values(ascending=False).head(unique_value-1).index):
-                    df[i + "_" + categories] = np.where(df[i] == categories, 1, 0)
+                    df[i + categories] = np.where(df[i] == categories, 1, 0)
     return df
 allonehotencoding(df)
 for i in df.columns:
@@ -570,6 +570,10 @@ df = pd.DataFrame(df)""")
 
 st.markdown(30*"--")
 st.write("## Machine Learning")
+try:
+    df = df.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+except:
+    pass
 params = dict()
 models_name = st.sidebar.selectbox("Select Model", ("KNN","Logistic Regression", "SVM", "Random Forest","XGBoost","LightGBM"))
 
@@ -967,17 +971,63 @@ params = {params}""")
                 params["subsample"] = hp.uniform('min_samples_leaf', 0.01, 0.99)
                 clf_tune = XGBClassifier()
             elif models_name == "LightGBM":
+                params=dict()
                 params["max_depth"] = hp.quniform('max_depth', 10, 1200, 10)
-                params["reg_alpha"] = hp.uniform('min_samples_leaf', 2, 20)
-                params["n_estimators"] = hp.uniform('min_samples_leaf', 20, 2000)
+                params["reg_alpha"] = hp.uniform("reg_alpha", 2, 20)
+                params["n_estimators"] = hp.quniform("n_estimators", 20, 2000,10)
                 params["boosting_type"] = hp.choice("boosting_type", ['gbdt', 'dart', 'goss'])
-                params["reg_lambda"] = hp.uniform('min_samples_leaf', 1, 20)
-                params["num_leaves"] = hp.uniform('min_samples_leaf', 2, 300)
-                params["colsample_bytree"] = hp.uniform('min_samples_leaf', 0.1, 0.9)
-                params["min_child_weight"] = hp.uniform('min_samples_leaf', 1, 5)
-                params["min_child_samples"] = hp.uniform('min_samples_leaf', 1, 5)
-                params["learning_rate"] = hp.uniform('min_samples_leaf', 0.001, 0.999)
-                clf_tune = lgb.LGBMClassifier()
+                params["reg_lambda"] = hp.uniform("reg_lambda", 1, 20)
+                params["num_leaves"] = hp.uniform("num_leaves", 2, 300)
+                params["colsample_bytree"] = hp.uniform("colsample_bytree", 0.1, 0.9)
+                params["min_child_weight"] = hp.uniform("min_child_weight", 1, 5)
+                params["min_child_samples"] = hp.uniform("min_child_samples", 1, 5)
+                params["learning_rate"] = hp.uniform("learning_rate", 0.001, 0.999)
+                boost = {0: 'gbdt', 1: 'dart',2:'goss'}
+
+                def objective(params):
+                    model = lgb.LGBMClassifier(max_depth = int(params["max_depth"]),
+                                               reg_alpha = params["reg_alpha"],
+                                               n_estimators = int(params["n_estimators"]),
+                                               boosting_type = params["boosting_type"],
+                                               reg_lambda = params["reg_lambda"],
+                                               num_leaves = int(params["num_leaves"]),
+                                               colsample_bytree = params["colsample_bytree"],
+                                               min_child_weight = int(params["min_child_weight"]),
+                                               min_child_samples = int(params["min_child_samples"]),
+                                               learning_rate = params["learning_rate"])
+                    accuracy = cross_val_score(model, X_train, y_train, cv = fold).mean()
+
+                    # We aim to maximize accuracy, therefore we return it as a negative value
+                    return {'loss': -accuracy, 'status': STATUS_OK}
+
+
+                trials = Trials()
+                best = fmin(fn=objective,
+                            space=params,
+                            algo=tpe.suggest,
+                            max_evals=80,
+                            trials=trials)
+
+                boost = {0: 'gbdt', 1: 'dart', 2 : 'goss'}
+
+                clf = lgb.LGBMClassifier(max_depth = int(best["max_depth"]),
+                                               reg_alpha = best["reg_alpha"],
+                                               n_estimators = int(best["n_estimators"]),
+                                               boosting_type = boost[best["boosting_type"]],
+                                               reg_lambda  = best["reg_lambda"],
+                                               num_leaves= int(best["num_leaves"]),
+                                               colsample_bytree = best["colsample_bytree"],
+                                               min_child_weight = int(best["min_child_weight"]),
+                                               min_child_samples = int(best["min_child_samples"]),
+                                               learning_rate = best["learning_rate"]).fit(X_train, y_train)
+                y_pred = clf.predict(X_test)
+                confusion_matrix(y_test, y_pred)
+                accuracy_score(y_test, y_pred)
+                classification_report(y_test, y_pred)
+                st.code("confusion_matrix Bayesian Optimization (Hyperopt): {}".format(confusion_matrix(y_test, y_pred)))
+                st.code("Accuracy Score Bayesian Optimization (Hyperopt) {}".format(accuracy_score(y_test, y_pred)))
+                st.sidebar.write("Accuracy Score Tuned {}".format(accuracy_score(y_test, y_pred)))
+                st.code("Classification report Bayesian Optimization (Hyperopt): {}".format(classification_report(y_test, y_pred)))
 
             else:
 
@@ -999,7 +1049,7 @@ params = {params}""")
                                                    min_samples_split=params['min_samples_split'],
                                                    n_estimators=params['n_estimators'],
                                                    )
-                    accuracy = cross_val_score(clf_tune,df, y, cv = fold).mean()
+                    accuracy = cross_val_score(model,X_train, y_train, cv = fold).mean()
 
                     # We aim to maximize accuracy, therefore we return it as a negative value
                     return {'loss': -accuracy, 'status': STATUS_OK}
@@ -1269,11 +1319,17 @@ def Prediction(dftest,testfile):
         dftest = pd.DataFrame(dftest)
     ## Prediction
     try:
+        dftest = dftest.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+    except:
+        pass
+    try:
+
         result = clf.predict(dftest)
         st.write(f"result {result.iloc[:,0]}")
 
 
     except:
+
         result = clf.predict(dftest)
         output = pd.DataFrame()
         outputkaggle=pd.DataFrame()
