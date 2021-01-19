@@ -9,4 +9,5 @@ xgboost
 lightgbm
 hyperopt
 tpot
+optuna
 

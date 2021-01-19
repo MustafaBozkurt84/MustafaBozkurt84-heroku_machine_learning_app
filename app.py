@@ -28,6 +28,7 @@ from sklearn.model_selection import cross_val_score,KFold, GroupKFold, Stratifie
 from sklearn.model_selection import RandomizedSearchCV,GridSearchCV
 from hyperopt import hp,fmin,tpe,STATUS_OK,Trials
 from tpot import TPOTClassifier
+import optuna
 #PAGE= st.sidebar.radio("Page",["Train","Test"])
 #if PAGE=="Train":
 st.title("Create Your Own Model and Generate Code")
@@ -699,10 +700,10 @@ clf = get_classifier(models_name,params)
 st.cache()
 df_train = df
 
-use_cv =st.sidebar.selectbox("Cross Validation",("Do not use Cross Validation","Use Cross Validation"))
+use_cv =st.selectbox("Cross Validation",("Do not use Cross Validation","Use Cross Validation"))
 if use_cv == "Use Cross Validation":
-    fold_cv = st.sidebar.selectbox("Select Fold Type",("KFold","StratifiedKFold","TimeSeriesSplit"))
-    n_splits_fold =st.sidebar.slider("n_splits",2,10)
+    fold_cv = st.selectbox("Select Fold Type",("KFold","StratifiedKFold","TimeSeriesSplit"))
+    n_splits_fold =st.slider("n_splits",2,10)
     if fold_cv == "KFold":
         fold = KFold(n_splits=n_splits_fold)
     elif fold_cv == "StratifiedKFold":
@@ -771,11 +772,11 @@ acc = accuracy_score(y_test, y_pred)""")
     else:
         st.code(f"""acc = cross_val_score(clf, df, y, cv={fold}, scoring="accuracy")""")
 st.write(f""" ## Model Tuning for {models_name}""")
-model_tuning = st.sidebar.selectbox("Select Option for Model Tuning",("Do not Apply Hyper Parameter Optimization ","Apply Hyper Parameter Optimization"))
+model_tuning = st.selectbox("Select Option for Model Tuning",("Do not Apply Hyper Parameter Optimization ","Apply Hyper Parameter Optimization"))
 optimizers =["Select","RandomizedSearchCV-GridSearchCV", "Bayesian Optimization (Hyperopt)", "Optuna- Automate Hyperparameter Tuning", "Genetic Algorithms (TPOT Classifier)"]
 if model_tuning == "Apply Hyper Parameter Optimization":
-    fold_cv_hyp = st.sidebar.selectbox("Select Fold Type", ("KFold ", "StratifiedKFold ", "TimeSeriesSplit "))
-    n_splits_fold_hyp = st.sidebar.slider("n_splits ", 2, 5)
+    fold_cv_hyp = st.selectbox("Select Fold Type", ("KFold ", "StratifiedKFold ", "TimeSeriesSplit "))
+    n_splits_fold_hyp = st.slider("n_splits ", 2, 5)
     if fold_cv_hyp == "KFold ":
         fold = KFold(n_splits=n_splits_fold_hyp)
     elif fold_cv_hyp == "StratifiedKFold ":
@@ -783,7 +784,7 @@ if model_tuning == "Apply Hyper Parameter Optimization":
     elif fold_cv_hyp == "TimeSeriesSplit ":
         fold = TimeSeriesSplit(n_splits=n_splits_fold_hyp)
     X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2, random_state=42)
-    hyperop = st.sidebar.selectbox("Select Optimizer",optimizers)
+    hyperop = st.selectbox("Select Optimizer",optimizers)
     params = dict()
 
     if models_name == "KNN":
@@ -1403,8 +1404,7 @@ classification_report(y_test, y_pred) """)
                 st.code("Accuracy Score Bayesian Optimization (Hyperopt) {}".format(accuracy_score(y_test, y_pred)))
                 st.sidebar.write("Accuracy Score Tuned {}".format(accuracy_score(y_test, y_pred)))
                 st.code("Classification report Bayesian Optimization (Hyperopt): {}".format(classification_report(y_test, y_pred)))
-                if st.button("Generate Code for Bayesian Optimization"):
-                    st.code("""
+                st.code("""
     params = dict()
     params["n_estimators"] = hp.choice('n_estimators',[10,50,300,750,1200,1300,1500])
     params["criterion"] = hp.choice('criterion', ['entropy', 'gini'])
@@ -1451,8 +1451,7 @@ classification_report(y_test, y_pred) """)
             p = [1, 2]
             params['metric'] = ['euclidean', 'manhattan']
             params["p"] = p
-            iteration = 100
-            clf_tune = KNeighborsClassifier()
+            clf_tune = "sklearn.neighbors.KNeighborsClassifier"
         elif models_name == "Logistic Regression":
 
             C = [int(x) for x in np.linspace(start=0.001, stop=1000.0, num=10)]
@@ -1464,7 +1463,7 @@ classification_report(y_test, y_pred) """)
             params["max_iter"] = max_iter
             params["solver"] = solver
             iteration = 200
-            clf_tune = LogisticRegression()
+            clf_tune = "sklearn.linear_model.LogisticRegression"
         elif models_name == "SVM":
 
             C = [int(x) for x in np.linspace(start=0.001, stop=1000.0, num=10)]
@@ -1472,7 +1471,7 @@ classification_report(y_test, y_pred) """)
             gamma_range = [int(x) for x in np.linspace(start=0.01, stop=1000.0, num=10)]
             params["gamma"] = gamma_range
             iteration = 100
-            clf_tune = SVC()
+            clf_tune = "sklearn.svm.SVC"
         elif models_name == "XGBoost":
 
             max_depth = [int(x) for x in np.linspace(start=2, stop=200, num=10)]
@@ -1488,7 +1487,7 @@ classification_report(y_test, y_pred) """)
             params["learning_rate"] = learning_rate
             params["subsample"] = subsample
             iteration = 200
-            clf_tune = XGBClassifier()
+            clf_tune = "xgboost.XGBClassifier"
         elif models_name == "LightGBM":
 
             max_depth = [int(x) for x in np.linspace(start=-1, stop=200, num=5)]
@@ -1512,7 +1511,7 @@ classification_report(y_test, y_pred) """)
             params["min_child_samples"] = min_child_samples
             params["learning_rate"] = learning_rate
             iteration = 200
-            clf_tune = lgb.LGBMClassifier()
+            clf_tune = "lightgbm.LGBMClassifier"
 
         else:
 
@@ -1522,15 +1521,209 @@ classification_report(y_test, y_pred) """)
             params["min_samples_leaf"] = [int(x) for x in np.linspace(start=1, stop=10, num=5)]
             params["min_samples_split"] = [int(x) for x in np.linspace(start=2, stop=15, num=3)]
             params["max_depth"] = [int(x) for x in np.linspace(start=1, stop=1000, num=10)]
-            clf_tune = RandomForestClassifier()
+            clf_tune = 'sklearn.ensemble.RandomForestClassifier'
             iteration = 400
-        tpot_classifier = TPOTClassifier(generations=5, population_size=24, offspring_size=12,
+        clf = TPOTClassifier(generations=5, population_size=24, offspring_size=12,
                                          verbosity=2, early_stop=12,
-                                         config_dict={clf_tune : params},
-                                         cv=4, scoring='accuracy')
-        tpot_classifier.fit(X_train, y_train)
-        
-        
+                                         config_dict={ clf_tune : params},
+                                         cv=fold, scoring='accuracy')
+        clf.fit(X_train, y_train)
+        st.code("confusion_matrix Bayesian Optimization (Hyperopt): {}".format(confusion_matrix(y_test, y_pred)))
+        st.code("Accuracy Score Bayesian Optimization (Hyperopt) {}".format(accuracy_score(y_test, y_pred)))
+        st.sidebar.write("Accuracy Score Tuned Genetic Algorithms (TPOT Classifier){}".format(clf.score(X_test, y_test)))
+        st.code(
+            "Classification report Bayesian Optimization (Hyperopt): {}".format(classification_report(y_test, y_pred)))
+        st.code(f"""#{models_name}
+tpot_classifier = TPOTClassifier(generations=5, 
+                            population_size=24, 
+                            offspring_size=12,
+                            verbosity=2, 
+                            early_stop=12,
+                            config_dict={{ {clf_tune} : params}},
+                            cv={fold}, 
+                            scoring='accuracy')
+tpot_classifier.fit(X_train, y_train)
+accuracy = tpot_classifier.score(X_test, y_test)""")
+    if  hyperop == "Optuna- Automate Hyperparameter Tuning":
+        params = dict()
+        if models_name == "KNN":
+            def objective(trial):
+                params = dict()
+                params["n_neighbors"] = trial.suggest_int("n_neighbors", 2, 50)
+                params["leaf_size"] = trial.suggest_int("leaf_size", 1, 50)
+                params['metric'] = trial.suggest_categorical("metric", ['euclidean', 'manhattan'])
+                params["p"] = trial.suggest_categorical("p", [1, 2])
+                model = KNeighborsClassifier(n_neighbors=int(params["n_neighbors"]),
+                                             leaf_size=int(params["leaf_size"]),
+                                             metric=params['metric'],
+                                             p=params["p"])
+                return cross_val_score(model, X_train, y_train, cv=fold,n_jobs = -1).mean()
+            st.write(f"Code for Optima ({models_name})")
+            st.code(f"""def objective(trial):
+    params = dict()
+    params["n_neighbors"] = trial.suggest_int("n_neighbors", 2, 50)
+    params["leaf_size"] = trial.suggest_int("leaf_size", 1, 50)
+    params['metric'] = trial.suggest_categorical("metric", ['euclidean', 'manhattan'])
+    params["p"] = trial.suggest_categorical("p", [1, 2])
+    model = KNeighborsClassifier(n_neighbors=int(params["n_neighbors"]),
+                                 leaf_size=int(params["leaf_size"]),
+                                 metric=params['metric'],
+                                 p=params["p"])
+    return cross_val_score(model, X_train, y_train, cv=fold,n_jobs = -1).mean()""")
+        elif models_name == "Logistic Regression":
+            def objective(trial):
+                params = dict()
+                params["C"] = trial.suggest_float('C', 0.01, 1000)
+                params["max_iter"] = trial.suggest_int('max_iter', 5, 500)
+                params["solver"] = trial.suggest_categorical("solver", ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'])
+                params["penalty"] = trial.suggest_categorical("penalty", ["l1", "l2"])
+                clf = LogisticRegression(C=params["C"],
+                                           max_iter=int(params["max_iter"]),
+                                           solver=params["solver"],
+                                           penalty=params["penalty"])
+                return cross_val_score(clf, X_train, y_train,n_jobs =-1, cv=fold).mean()
+
+
+            st.write(f"Code for Optima ({models_name})")
+            st.code(f"""def objective(trial):
+    params = dict()
+    params["C"] = trial.suggest_float('C', 0.01, 1000)
+    params["max_iter"] = trial.suggest_int('max_iter', 5, 500)
+    params["solver"] = trial.suggest_categorical("solver", ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'])
+    params["penalty"] = trial.suggest_categorical("penalty", ["l1", "l2"])
+    clf = LogisticRegression(C=params["C"],
+                             max_iter=int(params["max_iter"]),
+                             solver=params["solver"],
+                             penalty=params["penalty"])
+    return cross_val_score(clf, X_train, y_train,n_jobs =-1, cv={fold}).mean()""")
+
+        elif models_name == "SVM":
+            def objective(trial):
+                params = dict()
+                params["C"] = trial.suggest_float("C", 0.01, 1000.0)
+                params["gamma"] = trial.suggest_float("gamma", 0.01, 1000.0)
+                clf = SVC(C=params["C"],
+                          gamma=params["gamma"])
+                return cross_val_score(clf,X_train,y_train,cv=fold,n_jobs=-1).mean()
+            st.write(f"Code for Optima ({models_name})")
+            st.code(f"""def objective(trial):
+    params = dict()
+    params["C"] = trial.suggest_float("C", 0.01, 1000.0)
+    params["gamma"] = trial.suggest_float("gamma", 0.01, 1000.0)
+    clf = SVC(C=params["C"],
+                gamma=params["gamma"])
+    return cross_val_score(clf,X_train,y_train,cv={fold},n_jobs=-1).mean()""")
+
+
+
+        elif models_name == "XGBoost":
+            def objective(trial):
+                params = dict()
+                params["max_depth"] = trial.suggest_int('max_depth', 10, 1200, 10)
+                params["n_estimators"] = trial.suggest_int("n_estimators", 20, 2000)
+                params["min_child_weight"] = trial.suggest_int("min_child_weight", 1, 5)
+                params["colsample_bytree"] = trial.suggest_float("colsample_bytree", 0.1, 0.9)
+                params["learning_rate"] = trial.suggest_float("learning_rate", 0.001, 0.999)
+                params["subsample"] = trial.suggest_float("subsample", 0.01, 0.99)
+
+                clf = XGBClassifier(max_depth=(params["max_depth"]),
+                                      n_estimators=(params["n_estimators"]),
+                                      colsample_bytree=params["colsample_bytree"],
+                                      min_child_weight=(params["min_child_weight"]),
+                                      subsample=params["subsample"],
+                                      learning_rate=params["learning_rate"])
+                return cross_val_score(clf, X_train, y_train, n_jobs=-1, cv=fold).mean()
+            st.write(f"Code for Optima ({models_name})")
+            st.code(f"""def objective(trial):
+    params = dict()
+    params["max_depth"] = trial.suggest_int('max_depth', 10, 1200, 10)
+    params["n_estimators"] = trial.suggest_int("n_estimators", 20, 2000)
+    params["min_child_weight"] = trial.suggest_int("min_child_weight", 1, 5)
+    params["colsample_bytree"] = trial.suggest_float("colsample_bytree", 0.1, 0.9)
+    params["learning_rate"] = trial.suggest_float("learning_rate", 0.001, 0.999)
+    params["subsample"] = trial.suggest_float("subsample", 0.01, 0.99)
+
+    clf = XGBClassifier(max_depth=(params["max_depth"]),
+                        n_estimators=(params["n_estimators"]),
+                        colsample_bytree=params["colsample_bytree"],
+                        min_child_weight=(params["min_child_weight"]),
+                        subsample=params["subsample"],
+                        learning_rate=params["learning_rate"])
+    return cross_val_score(clf, X_train, y_train, n_jobs=-1, cv={fold}).mean()""")
+        elif models_name == "LightGBM":
+            def objective(trial):
+                params = dict()
+                params["max_depth"] = trial.suggest_int('max_depth', 10, 1200, 10)
+                params["reg_alpha"] = trial.suggest_int("reg_alpha", 2, 20)
+                params["n_estimators"] = trial.suggest_int("n_estimators", 20, 2000, 10)
+                params["boosting_type"] = trial.suggest_categorical("boosting_type", ['gbdt', 'dart', 'goss'])
+                params["reg_lambda"] = trial.suggest_int("reg_lambda", 1, 20,5)
+                params["num_leaves"] = trial.suggest_int("num_leaves", 2, 300,5)
+                params["colsample_bytree"] = trial.suggest_float("colsample_bytree", 0.1, 0.9)
+                params["min_child_weight"] = trial.suggest_int("min_child_weight", 1, 5)
+                params["min_child_samples"] = trial.suggest_int("min_child_samples", 1, 5)
+                params["learning_rate"] = trial.suggest_float("learning_rate", 0.001, 0.999)
+                clf = lgb.LGBMClassifier(max_depth = params["max_depth"],
+                                           reg_alpha = params["reg_alpha"],
+                                           n_estimators = params["n_estimators"],
+                                           boosting_type = params["boosting_type"],
+                                           reg_lambda  =params["reg_lambda"],
+                                           num_leaves = params["num_leaves"],
+                                           colsample_bytree = params["colsample_bytree"],
+                                           min_child_weight = params["min_child_weight"],
+                                           min_child_samples = params["min_child_samples"],
+                                           learning_rate = params["learning_rate"])
+                return cross_val_score(clf,X_train,y_train, n_jobs=-1, cv=fold).mean()
+            st.write(f"Code for Optima ({models_name})")
+            st.code(f"""def objective(trial):
+    params = dict()
+    params["max_depth"] = trial.suggest_int('max_depth', 10, 1200, 10)
+    params["reg_alpha"] = trial.suggest_int("reg_alpha", 2, 20)
+    params["n_estimators"] = trial.suggest_int("n_estimators", 20, 2000, 10)
+    params["boosting_type"] = trial.suggest_categorical("boosting_type", ['gbdt', 'dart', 'goss'])
+    params["reg_lambda"] = trial.suggest_int("reg_lambda", 1, 20,5)
+    params["num_leaves"] = trial.suggest_int("num_leaves", 2, 300,5)
+    params["colsample_bytree"] = trial.suggest_float("colsample_bytree", 0.1, 0.9)
+    params["min_child_weight"] = trial.suggest_int("min_child_weight", 1, 5)
+    params["min_child_samples"] = trial.suggest_int("min_child_samples", 1, 5)
+    params["learning_rate"] = trial.suggest_float("learning_rate", 0.001, 0.999)
+    clf = lgb.LGBMClassifier(max_depth = params["max_depth"],
+                            reg_alpha = params["reg_alpha"],
+                            n_estimators = params["n_estimators"],
+                            boosting_type = params["boosting_type"],
+                            reg_lambda  =params["reg_lambda"],
+                            num_leaves = params["num_leaves"],
+                            colsample_bytree = params["colsample_bytree"],
+                            min_child_weight = params["min_child_weight"],
+                            min_child_samples = params["min_child_samples"],
+                            learning_rate = params["learning_rate"])
+    return cross_val_score(clf,X_train,y_train, n_jobs=-1, cv=fold).mean()""")
+        else:
+            def objective(trial):
+                params = dict()
+                params["n_estimators"] = trial.suggest_int('n_estimators', 10,1500,10)
+                params["criterion"] = trial.suggest_categorical('criterion', ['entropy', 'gini'])
+                params["max_features"] = trial.suggest_categorical('max_features', ['auto', 'sqrt', 'log2', None])
+                params["min_samples_leaf"] = trial.suggest_int('min_samples_leaf', 1, 10)
+                params["min_samples_split"] = trial.suggest_int('min_samples_split', 2, 20)
+                params["max_depth"] = trial.suggest_int('max_depth', 2, 1200, 10)
+
+                clf = RandomForestClassifier(criterion=params['criterion'],
+                                               max_depth=params['max_depth'],
+                                               max_features=params['max_features'],
+                                               min_samples_leaf=params['min_samples_leaf'],
+                                               min_samples_split=params['min_samples_split'],
+                                               n_estimators=params['n_estimators'])
+                return cross_val_score(clf,X_train,y_train, n_jobs=-1, cv=fold).mean()
+
+
+        study = optuna.create_study(direction='maximize')
+        study.optimize(objective, n_trials=100)
+        trial = study.best_trial
+        st.sidebar.write('Accuracy optuna: {}'.format(trial.value))
+        st.code("Best hyperparameters: {}".format(trial.params))
+
+
 
 
 
@@ -1543,8 +1736,6 @@ else:
         
         - Bayesian Optimization (Hyperopt)
          
-        - Sequential Model Based Optimization
-        
         - Optuna- Automate Hyperparameter Tuning
         
         - Genetic Algorithms (TPOT Classifier) """)
@@ -1557,7 +1748,10 @@ def download_model(model):
     b64 = base64.b64encode(output_model).decode()
     href = f'<a href="data:file/output_model;base64,{b64}">Download Trained Model .pkl File</a> (right-click and save as &lt;model&gt;.pkl)'
     st.markdown(href, unsafe_allow_html=True)
-download_model(clf)
+try:
+    download_model(clf)
+except:
+    pass
 # save the model to disk
 if st.button("Generate Code for Save & Load Model"):
     st.code("""#save & load the model  
