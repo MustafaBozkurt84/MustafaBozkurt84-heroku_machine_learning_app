@@ -2422,66 +2422,67 @@ if PAGE == "Deployment":
     project_name =st.text_input("Write your project name")
 
 
-
     try:
-        def pickle_all(key, value):
-            pickle_out = open(key + ".pkl", "wb")
-            pickle.dump(value, pickle_out)
-            pickle_out.close()
-        pickle_all("project_name", project_name)
-    except:
-        pass
-    import marshal
+        try:
+            def pickle_all(key, value):
+                pickle_out = open(key + ".pkl", "wb")
+                pickle.dump(value, pickle_out)
+                pickle_out.close()
+            pickle_all("project_name", project_name)
+        except:
+            pass
+        import marshal
 
-    s = open("app_deploy.py").read()
-    g = compile(s, '', 'exec')
-    b = marshal.dumps(g)
-    w = open('f-marshal.py', 'w')
-    w.write('import marshal\n')
-    w.write('exec(marshal.loads(' + repr(b) + '))')
-    w.close()
+        s = open("app_deploy.py").read()
+        g = compile(s, '', 'exec')
+        b = marshal.dumps(g)
+        w = open('f-marshal.py', 'w')
+        w.write('import marshal\n')
+        w.write('exec(marshal.loads(' + repr(b) + '))')
+        w.close()
 
-    os.system('bash deploy_local.sh')
-    try:
-        with open("local_deployment.tar", "rb") as f:
-            bytes = f.read()
-            b64 = base64.b64encode(bytes).decode()
-            href = f'<a href="data:file/tar;base64,{b64}">Download File</a> (right-click and save as local_deployment.tar)'
+        os.system('bash deploy_local.sh')
+        try:
+            with open("local_deployment.tar", "rb") as f:
+                bytes = f.read()
+                b64 = base64.b64encode(bytes).decode()
+                href = f'<a href="data:file/tar;base64,{b64}">Download File</a> (right-click and save as local_deployment.tar)'
 
+                st.markdown(
+                    f"""<div style="color:black";border-color:#F50057" class="box">Download the file to the desktop(right-click and save as local_deployment.tar).
+                    Then type the commands below into git bash.</div>""",
+                    unsafe_allow_html=True)
+                st.markdown(href, unsafe_allow_html=True)
+                st.markdown(f"""
+                <!DOCTYPE html>
+                <title>My Example</title>
+                <style>
+                    .box {{
+                        background-color: transparent;
+                        font-size: 1vw;
+                        padding: 0vw;
+                        margin: 1vw;
+                        border: solid;
+                        border-color:#F50057;
+                    }}
+                </style>
+    
+                <div class="box">In order to deploy to heroku, first of all you need an account.Open your command Prompt</div>""", unsafe_allow_html=True)
 
+                st.markdown("https://devcenter.heroku.com/articles/heroku-cli  Download CLI ")
 
-            st.markdown(href, unsafe_allow_html=True)
-            st.markdown(f"""
-            <!DOCTYPE html>
-            <title>My Example</title>
-            <style>
-            	.box {{
-            		background-color: transparent;
-            		font-size: 1vw;
-            		padding: 0vw;
-            		margin: 1vw;
-            		border: solid;
-                    border-color:#F50057;
-            	}}
-            </style>
-
-            <div class="box">In order to deploy to heroku, first of all you need an account.Open your command Prompt</div>""", unsafe_allow_html=True)
-
-            st.markdown("https://devcenter.heroku.com/articles/heroku-cli  Download CLI ")
-
-            st.code("heroku login")
-            st.code("heroku create appname #write any name")
-            st.markdown(
-                f"""<div style="color:black";border-color:#F50057" class="box">Download the file to the desktop(right-click and save as local_deployment.tar).
-Then type the commands below into git bash.</div>""",
-                unsafe_allow_html=True)
-            
+                st.code("heroku login")
+                st.code("heroku create appname #write any name")
 
 
 
-        st.code("tar -xf local_deployment.tar")
 
-        st.code("bash ./local_deployment/local.sh")
+
+            st.code("tar -xf local_deployment.tar")
+
+            st.code("bash ./local_deployment/local.sh")
+        except:
+            pass
     except:
         pass
 
