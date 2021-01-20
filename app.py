@@ -2013,40 +2013,88 @@ trial.params""")
     plt.ylabel("Principal Component 2")
     plt.colorbar()
     plt.show()""")
-    pickle_dict = {"df_test": df_test, "target_column": target_column, "df__test": df__test, "X_Selected": X_Selected,
-                   "clf": clf, "models_name": models_name, "drop_list": drop_list, "corCol": corCol,
-                   "encode_list": encode_list,
-                   "Outliers_handle": Outliers_handle, "numeric_cols": numeric_cols,
-                   "col_after_endoded_all ": col_after_endoded_all}
 
-
+    os.system('rm -f ./*.pkl')
     def pickle_all(key,value):
          pickle_out = open(key+".pkl", "wb")
          pickle.dump(value, pickle_out)
          pickle_out.close()
-    for key,value in pickle_dict.items():
-        pickle_all(key,value)
-
-
-
-    pickle_all("df_test", df_test)
-    pickle_all("target_column", target_column)
-    pickle_all("df__test", df__test)
-
-    pickle_all("X_Selected", X_Selected)
-    pickle_all("clf", clf)
-    pickle_all("models_name", models_name)
-    pickle_all("drop_list", drop_list)
-    pickle_all("corCol", corCol)
-    pickle_all("encode_list", "encode_list")
     try:
-        pickle_all("encode_list", "encode_list")
+        pickle_all("df_test", df_test)
     except:
         pass
-
-
-
-
+    try:
+        pickle_all("target_column", target_column)
+    except:
+        pass
+    try:
+        pickle_all("df__test", df__test)
+    except:
+        pass
+    try:
+        pickle_all("X_Selected", X_Selected)
+    except:
+        pass
+    try:
+        pickle_all("clf", clf)
+    except:
+        pass
+    try:
+       pickle_all("models_name", models_name)
+    except:
+        pass
+    try:
+        pickle_all("drop_list", drop_list)
+    except:
+        pass
+    try:
+        pickle_all("corCol", corCol)
+    except:
+        pass
+    try:
+        pickle_all("encode_list", encode_list)
+    except:
+        pass
+    try:
+        pickle_all("Outliers_handle",Outliers_handle)
+    except:
+        pass
+    try:
+        pickle_all("numeric_cols", numeric_cols)
+    except:
+        pass
+    try:
+        pickle_all("col_after_endoded_all",col_after_endoded_all)
+    except:
+        pass
+    try:
+        pickle_all("Feature_importance", Feature_importance)
+    except:
+        pass
+    try:
+        pickle_all("standard_apply", standard_apply)
+    except:
+        pass
+    try:
+        pickle_all("scaler_obj", scaler_obj)
+    except:
+        pass
+    try:
+        pickle_all("g_cols", g_cols)
+    except:
+        pass
+    try:
+        pickle_all("scale_s", scale_s)
+    except:
+        pass
+    try:
+        pickle_all("use_pca", use_pca)
+    except:
+        pass
+    try:
+        pickle_all("pca1", pca1)
+    except:
+        pass
 
 
 
@@ -2061,16 +2109,107 @@ if PAGE=="Prediction and Testing":
                                             <h3 style="color:white;text-align:left;"> Prediction and Test</h3>
                                             </div>
                                             """, unsafe_allow_html=True)
+
+
+
+
+
     try:
-        pickle_dict={"df_test":df_test, "target_column":target_column, "df__test":df__test, "X_Selected":X_Selected, "clf":clf, "models_name":models_name, "drop_list":drop_list, "corCol":corCol, "encode_list":encode_list,
-                "Outliers_handle":Outliers_handle, "numeric_cols":numeric_cols, "col_after_endoded_all ":col_after_endoded_all}
+        pickle_in = open('df_test.pkl', 'rb')
+        df_test = pickle.load(pickle_in)
     except:
         pass
-    for key, value in pickle_dict.items():
-        pickle_in = open(key+'.pkl', 'rb')
-        value = pickle.load(pickle_in)
-    {"Feature_importance": Feature_importance, standard_apply: standard_apply, "scaler_obj": scaler_obj,
-        "g_cols": g_cols, "scale_s": scale_s, "s_cols": s_cols, "use_pca": use_pca, "pca1": pca1}
+    try:
+        pickle_in = open('target_column.pkl', 'rb')
+        target_column = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('df__test.pkl', 'rb')
+        df__test = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('X_Selected.pkl', 'rb')
+        X_Selected = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('clf.pkl', 'rb')
+        clf= pickle.load(pickle_in)
+    except:
+        pass
+    try:
+       pickle_in = open('models_name.pkl', 'rb')
+       models_name = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('drop_list.pkl', 'rb')
+        drop_list = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('corCol.pkl', 'rb')
+        corCol = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('encode_list.pkl', 'rb')
+        encode_list = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('Outliers_handle.pkl', 'rb')
+        Outliers_handle = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('numeric_cols .pkl', 'rb')
+        numeric_cols = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('col_after_endoded_all.pkl', 'rb')
+        col_after_endoded_all = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('Feature_importance.pkl', 'rb')
+        Feature_importance = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('standard_apply.pkl', 'rb')
+        standard_apply= pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('scaler_obj.pkl', 'rb')
+        scaler_obj = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('g_cols.pkl', 'rb')
+        g_cols = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('scale_s.pkl', 'rb')
+        scale_s= pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('use_pca.pkl', 'rb')
+        use_pca = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('pca1.pkl', 'rb')
+        pca1 = pickle.load(pickle_in)
+    except:
+        pass
+
 
 
     df_test.drop(target_column, axis=1, inplace=True)
