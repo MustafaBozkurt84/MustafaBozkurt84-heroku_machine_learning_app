@@ -2441,7 +2441,7 @@ if PAGE == "Deployment":
     w.write('exec(marshal.loads(' + repr(b) + '))')
     w.close()
 
-
+    os.system('bash deploy_local.sh')
     try:
         with open("local_deployment.tar", "rb") as f:
             bytes = f.read()
