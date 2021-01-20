@@ -33,8 +33,8 @@ import joblib
 import os
 import streamlit.components.v1 as components
 import marshal, types
-
-
+st.sidebar.write("https://github.com/MustafaBozkurt84")
+st.sidebar.write("https://www.linkedin.com/in/mustafa-bozkurt-3405a91a5/")
 html_temp = """
     <div style="background:#025246 ;padding:10px">
     <h2 style="color:white;text-align:center;"> Create Your Own Model and Generate Code</h2>
