@@ -2449,16 +2449,27 @@ if PAGE == "Deployment":
             href = f'<a href="data:file/tar;base64,{b64}">Download File</a> (right-click and save as local_deployment.tar)'
             st.write("""In order to deploy to heroku, first of all you need an account.Open your command Prompt""")
             st.code("heroku login")
-            st.code("heroku create appname #you write any name")
+            st.code("heroku create <appname> #write any name")
             st.write("Download the file to the desktop. Then type the commands below into git bash.")
 
             st.markdown(href, unsafe_allow_html=True)
-            st.markdown(
-                f"""<div style="color:black";border-color:#F50057" class="box">In order to deploy to heroku, first of all you need an account.Open your command Prompt</div>""",
-                unsafe_allow_html=True)
-            st.markdown(
-                f"""<div style="color:black";border-color:#F50057" class="box">https://devcenter.heroku.com/articles/heroku-cli  Download CLI </div>""",
-                unsafe_allow_html=True)
+            st.markdown(f"""
+            <!DOCTYPE html>
+            <title>My Example</title>
+            <style>
+            	.box {{
+            		background-color: transparent;
+            		font-size: 1vw;
+            		padding: 0vw;
+            		margin: 1vw;
+            		border: solid;
+                    border-color:#F50057;
+            	}}
+            </style>
+
+            <div class="box">In order to deploy to heroku, first of all you need an account.Open your command Prompt</div>""", unsafe_allow_html=True)
+            
+            st.markdown("https://devcenter.heroku.com/articles/heroku-cli  Download CLI ")
             st.write("In order to deploy to heroku, first of all you need an account.Open your command Prompt")
             st.code("heroku login")
             st.code("heroku create appname #you write any name")
