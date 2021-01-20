@@ -2095,6 +2095,10 @@ trial.params""")
         pickle_all("pca1", pca1)
     except:
         pass
+    try:
+        pickle_all("s_cols", s_cols)
+    except:
+        pass
 
 
 
@@ -2207,6 +2211,11 @@ if PAGE=="Prediction and Testing":
     try:
         pickle_in = open('pca1.pkl', 'rb')
         pca1 = pickle.load(pickle_in)
+    except:
+        pass
+    try:
+        pickle_in = open('s_cols.pkl', 'rb')
+        s_cols = pickle.load(pickle_in)
     except:
         pass
 
