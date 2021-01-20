@@ -2456,7 +2456,7 @@ if PAGE == "Deployment":
                     unsafe_allow_html=True)
 
                 st.markdown(href, unsafe_allow_html=True)
-                st.code("tar -xf local_deployment.tar")
+                st.code("tar -xf ~/Desktop/local_deployment.tar")
                 st.code("cd ~/Desktop/local_deployment")
                 st.markdown(f"""
                 <!DOCTYPE html>
@@ -2483,7 +2483,7 @@ if PAGE == "Deployment":
 
 
 
-                st.code("bash ./local_deployment/local.sh")
+                st.code("bash ~/Desktop/local_deployment/local.sh")
         except:
             pass
     except:
