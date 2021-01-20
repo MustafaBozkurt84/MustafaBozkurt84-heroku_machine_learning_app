@@ -2013,15 +2013,41 @@ trial.params""")
     plt.ylabel("Principal Component 2")
     plt.colorbar()
     plt.show()""")
+    pickle_dict = {"df_test": df_test, "target_column": target_column, "df__test": df__test, "X_Selected": X_Selected,
+                   "clf": clf, "models_name": models_name, "drop_list": drop_list, "corCol": corCol,
+                   "encode_list": encode_list,
+                   "Outliers_handle": Outliers_handle, "numeric_cols": numeric_cols,
+                   "col_after_endoded_all ": col_after_endoded_all}
 
 
-    df = pd.DataFrame({'numbers': [1, 2, 3], 'colors': ['red', 'white', 'blue']})
+    def pickle_all(key,value):
+         pickle_out = open(key+".pkl", "wb")
+         pickle.dump(value, pickle_out)
+         pickle_out.close()
+    for key,value in pickle_dict.items():
+        pickle_all(key,value)
 
-    st.write(df)
-    if st.button('save dataframe'):
-        open('df.csv', 'w').write(df.to_csv())
-    df = pd.read_csv("df.csv")
-    st.write("df")
+
+
+    pickle_all("df_test", df_test)
+    pickle_all("target_column", target_column)
+    pickle_all("df__test", df__test)
+
+    pickle_all("X_Selected", X_Selected)
+    pickle_all("clf", clf)
+    pickle_all("models_name", models_name)
+    pickle_all("drop_list", drop_list)
+    pickle_all("corCol", corCol)
+    pickle_all("encode_list", "encode_list")
+    try:
+        pickle_all("encode_list", "encode_list")
+    except:
+        pass
+
+
+
+
+
 
 
 
@@ -2029,24 +2055,24 @@ trial.params""")
 
 
 if PAGE=="Prediction and Testing":
+
     st.markdown(f"""
                                             <div style="background:#025246 ;padding:10px">
                                             <h3 style="color:white;text-align:left;"> Prediction and Test</h3>
                                             </div>
                                             """, unsafe_allow_html=True)
     try:
-        list_obj = [df_test, target_column, df__test, hyperop, X_Selected, clf, models_name, drop_list, corCol, encode_list,
-                Outliers_handle, numeric_cols, col_after_endoded_all, Feature_importance, standard_apply, scaler_obj,
-                g_cols, scale_s, s_cols, use_pca, pca1]
+        pickle_dict={"df_test":df_test, "target_column":target_column, "df__test":df__test, "X_Selected":X_Selected, "clf":clf, "models_name":models_name, "drop_list":drop_list, "corCol":corCol, "encode_list":encode_list,
+                "Outliers_handle":Outliers_handle, "numeric_cols":numeric_cols, "col_after_endoded_all ":col_after_endoded_all}
     except:
         pass
+    for key, value in pickle_dict.items():
+        pickle_in = open(key+'.pkl', 'rb')
+        value = pickle.load(pickle_in)
+    {"Feature_importance": Feature_importance, standard_apply: standard_apply, "scaler_obj": scaler_obj,
+        "g_cols": g_cols, "scale_s": scale_s, "s_cols": s_cols, "use_pca": use_pca, "pca1": pca1}
 
-    open('df_test.csv', 'r').read(pd.read_csv("df_test.csv"))
-    st.write(df_test)
 
-    with open("df_test.pkl", "rb") as target_column:
-        target_column = pickle.load(df_test)
-    target_column
     df_test.drop(target_column, axis=1, inplace=True)
     columns = df_test.columns
 
