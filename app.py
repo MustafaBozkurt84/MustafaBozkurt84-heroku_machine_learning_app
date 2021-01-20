@@ -2423,14 +2423,12 @@ if PAGE == "Deployment":
 
 
     try:
-        try:
-            def pickle_all(key, value):
-                pickle_out = open(key + ".pkl", "wb")
-                pickle.dump(value, pickle_out)
-                pickle_out.close()
-            pickle_all("project_name", project_name)
-        except:
-            pass
+        def pickle_all(key, value):
+            pickle_out = open(key + ".pkl", "wb")
+            pickle.dump(value, pickle_out)
+            pickle_out.close()
+        pickle_all("project_name", project_name)
+
         import marshal
 
         s = open("app_deploy.py").read()
