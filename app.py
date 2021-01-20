@@ -32,8 +32,8 @@ import optuna
 import joblib
 import os
 import streamlit.components.v1 as components
+import marshal, types
 
-# bootstrap 4 collapse example
 
 html_temp = """
     <div style="background:#025246 ;padding:10px">
@@ -2108,6 +2108,7 @@ trial.params""")
 
 if PAGE=="Prediction and Testing":
 
+
     st.markdown(f"""
                                             <div style="background:#025246 ;padding:10px">
                                             <h3 style="color:white;text-align:left;"> Prediction and Test</h3>
@@ -2386,6 +2387,8 @@ if PAGE=="Prediction and Testing":
 
 
 
+
+
             def get_table_download_link(df):
 
                 csv = df.to_csv(index=False)
@@ -2415,7 +2418,68 @@ if PAGE=="Prediction and Testing":
     if st.button("Predict"):
         Prediction(dftest,testfile)
 
-st.write("https://github.com/MustafaBozkurt84/MustafaBozkurt84-heroku_machine_learning_app")
+if PAGE == "Deployment":
+    project_name =st.text_input("Write your project name")
+
+
+
+    try:
+        def pickle_all(key, value):
+            pickle_out = open(key + ".pkl", "wb")
+            pickle.dump(value, pickle_out)
+            pickle_out.close()
+        pickle_all("project_name", project_name)
+    except:
+        pass
+    import marshal
+
+    s = open("app_deploy.py").read()
+    g = compile(s, '', 'exec')
+    b = marshal.dumps(g)
+    w = open('f-marshal.py', 'w')
+    w.write('import marshal\n')
+    w.write('exec(marshal.loads(' + repr(b) + '))')
+    w.close()
+
+
+    try:
+        with open("local_deployment.tar", "rb") as f:
+            bytes = f.read()
+            b64 = base64.b64encode(bytes).decode()
+            href = f'<a href="data:file/tar;base64,{b64}">Download File</a> (right-click and save as local_deployment.tar)'
+            st.write("""In order to deploy to heroku, first of all you need an account.Open your command Prompt""")
+            st.code("heroku login")
+            st.code("heroku create appname #you write any name")
+            st.write("Download the file to the desktop. Then type the commands below into git bash.")
+
+            st.markdown(href, unsafe_allow_html=True)
+            st.markdown(
+                f"""<div style="color:black";border-color:#F50057" class="box">In order to deploy to heroku, first of all you need an account.Open your command Prompt</div>""",
+                unsafe_allow_html=True)
+            st.markdown(
+                f"""<div style="color:black";border-color:#F50057" class="box">https://devcenter.heroku.com/articles/heroku-cli  Download CLI </div>""",
+                unsafe_allow_html=True)
+            st.write("In order to deploy to heroku, first of all you need an account.Open your command Prompt")
+            st.code("heroku login")
+            st.code("heroku create appname #you write any name")
+            st.write("""Download the file to the desktop(right-click and save as local_deployment.tar).
+Then type the commands below into git bash.""")
+
+
+
+        st.code("tar -xf local_deployment.tar")
+
+        st.code("bash ./local_deployment/local.sh")
+    except:
+        pass
+
+
+
+
+
+
+
+
 
 
 
