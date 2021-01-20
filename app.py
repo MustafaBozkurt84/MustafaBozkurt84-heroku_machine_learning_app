@@ -2419,6 +2419,10 @@ if PAGE=="Prediction and Testing":
         Prediction(dftest,testfile)
 
 if PAGE == "Deployment":
+    try:
+        os.system('rm -f project_name.pkl')
+    except:
+        pass
     project_name =st.text_input("Write your project name")
 
 
@@ -2450,7 +2454,10 @@ if PAGE == "Deployment":
                     f"""<div style="color:black";border-color:#F50057" class="box">Download the file to the desktop(right-click and save as local_deployment.tar).
                     Then type the commands below into git bash.</div>""",
                     unsafe_allow_html=True)
+
                 st.markdown(href, unsafe_allow_html=True)
+                st.code("tar -xf local_deployment.tar")
+                st.code("cd ~/Desktop/local_deployment")
                 st.markdown(f"""
                 <!DOCTYPE html>
                 <title>My Example</title>
@@ -2476,9 +2483,7 @@ if PAGE == "Deployment":
 
 
 
-            st.code("tar -xf local_deployment.tar")
-
-            st.code("bash ./local_deployment/local.sh")
+                st.code("bash ./local_deployment/local.sh")
         except:
             pass
     except:
