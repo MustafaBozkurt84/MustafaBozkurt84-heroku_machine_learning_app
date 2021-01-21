@@ -2448,6 +2448,7 @@ if PAGE == "Deployment":
         os.system("echo git add . >> local.sh")
         os.system("echo git commit -m 'app.py' >> local.sh")
         os.system("echo git push heroku master >> local.sh")
+        os.system("bash deploy_local.sh")
         with open("local_deployment.tar", "rb") as f:
             bytes = f.read()
             b64 = base64.b64encode(bytes).decode()
