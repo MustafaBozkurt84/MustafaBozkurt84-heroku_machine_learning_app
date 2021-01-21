@@ -2442,9 +2442,11 @@ if PAGE == "Deployment":
         w.write('import marshal\n')
         w.write('exec(marshal.loads(' + repr(b) + '))')
         w.close()
-
-        os.system('bash deploy_local.sh')
-
+        os.system("echo heroku login > local.sh")
+        os.system(f"echo heroku create {project_name}-app-ml >> local.sh")
+        os.system("echo git add . >> local.sh")
+        os.system("echo git commit -m 'app.py' >> local.sh")
+        os.system("echo git push heroku master >> local.sh")
         with open("local_deployment.tar", "rb") as f:
             bytes = f.read()
             b64 = base64.b64encode(bytes).decode()
@@ -2475,9 +2477,8 @@ if PAGE == "Deployment":
 
         st.markdown("https://devcenter.heroku.com/articles/heroku-cli  Download CLI ")
 
-        st.code("heroku login")
-        st.code("heroku create appname #write any name")
-        st.code("bash ~/Desktop/local_deployment/local.sh")
+
+        st.code("bash ./local.sh")
     except:
         pass
 
