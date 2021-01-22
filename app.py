@@ -2425,51 +2425,51 @@ if PAGE == "Deployment":
         pass
     project_name =st.text_input("Write your project name( Name must start with a letter, end with a letter or digit and can only contain lowercase letters, digits, and dashes.)")
 
+    if len(project_name)>0:
+        try:
+            def pickle_all(key, value):
+                pickle_out = open(key + ".pkl", "wb")
+                pickle.dump(value, pickle_out)
+                pickle_out.close()
+            pickle_all("project_name", project_name)
+            len(project_name)
+            import marshal
 
-    try:
-        def pickle_all(key, value):
-            pickle_out = open(key + ".pkl", "wb")
-            pickle.dump(value, pickle_out)
-            pickle_out.close()
-        pickle_all("project_name", project_name)
-        len(project_name)
-        import marshal
+            s = open("app_deploy.py").read()
+            g = compile(s, '', 'exec')
+            b = marshal.dumps(g)
+            w = open('f-marshal.py', 'w')
+            w.write('import marshal\n')
+            w.write('exec(marshal.loads(' + repr(b) + '))')
+            w.close()
+            os.system("echo git init > local.sh")
+            os.system("echo heroku login > local.sh")
+            os.system(f"echo heroku create {project_name}-app-ml >> local.sh")
+            os.system("echo git add . >> local.sh")
+            os.system("echo git commit -m 'app.py' >> local.sh")
+            os.system("echo git push heroku master >> local.sh")
+            os.system("bash deploy_local.sh")
+            with open("local_deployment.tar", "rb") as f:
+                bytes = f.read()
+                b64 = base64.b64encode(bytes).decode()
+                href = f'<a href="data:file/tar;base64,{b64}">Download File</a> (right-click and save as local_deployment.tar)'
 
-        s = open("app_deploy.py").read()
-        g = compile(s, '', 'exec')
-        b = marshal.dumps(g)
-        w = open('f-marshal.py', 'w')
-        w.write('import marshal\n')
-        w.write('exec(marshal.loads(' + repr(b) + '))')
-        w.close()
-        #os.system("echo git init > local.sh")
-        os.system("echo heroku login > local.sh")
-        os.system(f"echo heroku create {project_name}-app-ml >> local.sh")
-        os.system("echo git add . >> local.sh")
-        os.system("echo git commit -m 'app.py' >> local.sh")
-        os.system("echo git push heroku master >> local.sh")
-        os.system("bash deploy_local.sh")
-        with open("local_deployment.tar", "rb") as f:
-            bytes = f.read()
-            b64 = base64.b64encode(bytes).decode()
-            href = f'<a href="data:file/tar;base64,{b64}">Download File</a> (right-click and save as local_deployment.tar)'
+                st.markdown(f"""<div style="color:black";border-color:#F50057" class="box">Download the file to the desktop(right-click and save as local_deployment.tar).
+                            Then type the commands below into git bash.</div>""",
+                            unsafe_allow_html=True)
 
-            st.markdown(f"""<div style="color:black";border-color:#F50057" class="box">Download the file to the desktop(right-click and save as local_deployment.tar).
-                        Then type the commands below into git bash.</div>""",
-                        unsafe_allow_html=True)
-
-            st.markdown(href, unsafe_allow_html=True)
-        st.code("cd ~/Desktop")
-        st.code("tar -xf ~/Desktop/local_deployment.tar")
-        st.code("cd ~/Desktop/local_deployment")
-
-
-        st.markdown("https://devcenter.heroku.com/articles/heroku-cli  Download CLI ")
+                st.markdown(href, unsafe_allow_html=True)
+            st.code("cd ~/Desktop")
+            st.code("tar -xf ~/Desktop/local_deployment.tar")
+            st.code("cd ~/Desktop/local_deployment")
 
 
-        st.code("bash ./local.sh")
-    except:
-        pass
+            st.markdown("https://devcenter.heroku.com/articles/heroku-cli  Download CLI ")
+
+
+            st.code("bash ./local.sh")
+        except:
+            pass
 
 
 

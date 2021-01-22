@@ -14,10 +14,7 @@ def prediction_deploy():
     from sklearn.model_selection import train_test_split
     from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
     from sklearn.decomposition import PCA
-    import matplotlib.pyplot as plt
     import base64
-    import seaborn as sns
-    import missingno as msno
     from sklearn.feature_selection import SelectKBest
     from sklearn.feature_selection import chi2
     from sklearn.preprocessing import StandardScaler
@@ -29,10 +26,6 @@ def prediction_deploy():
     import re
     from sklearn.model_selection import cross_val_score,KFold, GroupKFold, StratifiedKFold, TimeSeriesSplit
     from sklearn.model_selection import RandomizedSearchCV,GridSearchCV
-    from hyperopt import hp,fmin,tpe,STATUS_OK,Trials
-    from tpot import TPOTClassifier
-    import optuna
-    import joblib
     import os
     import streamlit.components.v1 as components
     import marshal, types
@@ -338,9 +331,11 @@ def prediction_deploy():
                     pass
     if st.button("Predict"):
                     Prediction(dftest, testfile)
+                    st.write("https://github.com/MustafaBozkurt84")
 
 
 prediction_deploy()
+
 
 
 
