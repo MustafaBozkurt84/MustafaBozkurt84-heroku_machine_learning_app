@@ -2467,22 +2467,7 @@ if PAGE == "Deployment":
                 bytes = f.read()
                 b64 = base64.b64encode(bytes).decode()
                 href = f'<a href="data:file/tar;base64,{b64}">Download File</a> (right-click and save as local_deployment.tar)'
-                st.markdown(f"""
-<!DOCTYPE html>
-                       <title>My Example</title>
-                       <style>
-                       	.box {{
-                       		background-color: transparent;
-                       		font-size: 1vw;
-                       		padding: 0vw;
-                       		margin: 1vw;
-                       		border: solid;
-                               border-color:#F50057;
-                       	}}
-                       </style>
-
-                       <div class="box">This file contains everything for deployment to heroku. Download the file to the desktop(right-click and save as local_deployment.tar).Then type the commands below into git bash or you can deploy by yourself.</div>""",
-                            unsafe_allow_html=True)
+                st.markdown(f"""This file contains everything for deployment to heroku. Download the file to the desktop(right-click and save as local_deployment.tar).Then type the commands below into git bash or you can deploy by yourself.""")
 
 
 
