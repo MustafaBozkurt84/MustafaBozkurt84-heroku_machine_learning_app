@@ -514,46 +514,47 @@ if  PAGE == "Feature Engineering and Machine Learning":
             ascending=False).reset_index()
         st.write("Feature Importance Table")
         st.table(feature_score)
+    try:
+        if Feature_importance == "Reduce Features":
+            st.write()
 
-    if Feature_importance == "Reduce Features":
-        st.write()
+            feature_number=st.slider("Select Number of Feature , SEE the feature importances table ",1,df.shape[1])
+            X_Selected = []
+            Univariate_Selection(df,y,feature_number)
 
-        feature_number=st.slider("Select Number of Feature , SEE the feature importances table ",1,df.shape[1])
-        X_Selected = []
-        Univariate_Selection(df,y,feature_number)
-
-        df = df[X_Selected]
-        if st.button("Generate Code for Feature Selection"):
-            if Feature_importance == "Reduce Features":
-                st.code(f"""
-    
-    def Univariate_Selection( independent, dependent, N):
-        X_Selected=[]
-        select_obj = SelectKBest(score_func=chi2, k=10)
-        selected = select_obj.fit( independent, dependent)
-        feature_score = pd.DataFrame(selected.scores_, index= independent.columns, columns=["Score"])["Score"].sort_values(ascending=False).reset_index()
-        plt.figure(figsize=(16, 16))
-        sns.barplot(data=feature_score.sort_values(by='Score', ascending=False).head(N), x='Score', y='index')
-        plt.title(f'Top {feature_number} feature importance ')
-        plt.show()
-        X_Selected.extend(feature_score["index"].head(N))
-        df = df[X_Selected] 
-        return df
-    df = Univariate_Selection(df,y,{feature_number})""")
-
-
-    else :
-        st.markdown(f"""<div style="color:black;border-color:black;" class="box">You select all features / Total Columns {len(df.columns)}</div>""",unsafe_allow_html=True)
-        Univariate_Selection1(df,y,(df.columns))
+            df = df[X_Selected]
+            if st.button("Generate Code for Feature Selection"):
+                if Feature_importance == "Reduce Features":
+                    st.code(f"""
+        
+        def Univariate_Selection( independent, dependent, N):
+            X_Selected=[]
+            select_obj = SelectKBest(score_func=chi2, k=10)
+            selected = select_obj.fit( independent, dependent)
+            feature_score = pd.DataFrame(selected.scores_, index= independent.columns, columns=["Score"])["Score"].sort_values(ascending=False).reset_index()
+            plt.figure(figsize=(16, 16))
+            sns.barplot(data=feature_score.sort_values(by='Score', ascending=False).head(N), x='Score', y='index')
+            plt.title(f'Top {feature_number} feature importance ')
+            plt.show()
+            X_Selected.extend(feature_score["index"].head(N))
+            df = df[X_Selected] 
+            return df
+        df = Univariate_Selection(df,y,{feature_number})""")
 
 
-    st.markdown(30*"--")
-    st.markdown("""
-                        <div style="background:#025246 ;padding:10px">
-                        <h3 style="color:white;text-align:left;"> Standardization</h3>
-                        </div>
-                        """, unsafe_allow_html=True)
+        else :
+            st.markdown(f"""<div style="color:black;border-color:black;" class="box">You select all features / Total Columns {len(df.columns)}</div>""",unsafe_allow_html=True)
+            Univariate_Selection1(df,y,(df.columns))
 
+
+        st.markdown(30*"--")
+        st.markdown("""
+                            <div style="background:#025246 ;padding:10px">
+                            <h3 style="color:white;text-align:left;"> Standardization</h3>
+                            </div>
+                            """, unsafe_allow_html=True)
+    except:
+        pass
 
     standard_apply = st.selectbox("Standardization",("Do Not Apply Standardization","Apply Standardization"))
     if standard_apply=="Apply Standardization":
