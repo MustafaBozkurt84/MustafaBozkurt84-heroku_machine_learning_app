@@ -2423,7 +2423,7 @@ if PAGE == "Deployment":
         os.system('rm -f project_name.pkl')
     except:
         pass
-    project_name =st.text_input("Write your project name")
+    project_name =st.text_input("Write your project name( Name must start with a letter, end with a letter or digit and can only contain lowercase letters, digits, and dashes.)")
 
 
     try:
@@ -2432,7 +2432,7 @@ if PAGE == "Deployment":
             pickle.dump(value, pickle_out)
             pickle_out.close()
         pickle_all("project_name", project_name)
-
+        len(project_name)
         import marshal
 
         s = open("app_deploy.py").read()
@@ -2442,7 +2442,7 @@ if PAGE == "Deployment":
         w.write('import marshal\n')
         w.write('exec(marshal.loads(' + repr(b) + '))')
         w.close()
-        os.system("echo git init > local.sh")
+        #os.system("echo git init > local.sh")
         os.system("echo heroku login >> local.sh")
         os.system(f"echo heroku create {project_name}-app-ml >> local.sh")
         os.system("echo git add . >> local.sh")
@@ -2459,23 +2459,10 @@ if PAGE == "Deployment":
                         unsafe_allow_html=True)
 
             st.markdown(href, unsafe_allow_html=True)
+        st.code("cd ~/Desktop")
         st.code("tar -xf ~/Desktop/local_deployment.tar")
         st.code("cd ~/Desktop/local_deployment")
-        st.markdown(f"""
-                    <!DOCTYPE html>
-                    <title>My Example</title>
-                    <style>
-                        .box {{
-                            background-color: transparent;
-                            font-size: 1vw;
-                            padding: 0vw;
-                            margin: 1vw;
-                            border: solid;
-                            border-color:#F50057;
-                        }}
-                    </style>
-        
-                    <div class="box">In order to deploy to heroku, first of all you need an account.Open your command Prompt</div>""", unsafe_allow_html=True)
+
 
         st.markdown("https://devcenter.heroku.com/articles/heroku-cli  Download CLI ")
 
