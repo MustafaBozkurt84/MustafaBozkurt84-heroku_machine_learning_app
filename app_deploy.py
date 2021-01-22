@@ -331,7 +331,7 @@ def prediction_deploy():
                     pass
     if st.button("Predict"):
                     Prediction(dftest, testfile)
-                    st.write("https://github.com/MustafaBozkurt84")
+
 
 
 prediction_deploy()

@@ -2443,7 +2443,7 @@ if PAGE == "Deployment":
             w.write('exec(marshal.loads(' + repr(b) + '))')
             w.close()
             os.system("echo git init > local.sh")
-            os.system("echo heroku login > local.sh")
+            os.system("echo heroku login >> local.sh")
             os.system(f"echo heroku create {project_name}-app-ml >> local.sh")
             os.system("echo git add . >> local.sh")
             os.system("echo git commit -m 'app.py' >> local.sh")
@@ -2454,9 +2454,20 @@ if PAGE == "Deployment":
                 b64 = base64.b64encode(bytes).decode()
                 href = f'<a href="data:file/tar;base64,{b64}">Download File</a> (right-click and save as local_deployment.tar)'
 
-                st.markdown(f"""<div style="color:black";border-color:#F50057" class="box">Download the file to the desktop(right-click and save as local_deployment.tar).
-                            Then type the commands below into git bash.</div>""",
-                            unsafe_allow_html=True)
+                st.markdown(f"""
+<!DOCTYPE html>
+<title>My Example1</title>
+<style>
+	.box {{
+		background-color: transparent;
+		font-size: 1vw;
+		padding: 0vw;
+		margin: 1vw;
+		border: solid;
+        border-color:#F50057;
+	}}
+</style><div class="box">This file contains everything for deployment to heroku. Download the file to the desktop(right-click and save as local_deployment.tar).Then type the commands below into git bash or you can deploy by yourself</div>""", unsafe_allow_html=True)
+
 
                 st.markdown(href, unsafe_allow_html=True)
             st.code("cd ~/Desktop")
@@ -2468,6 +2479,7 @@ if PAGE == "Deployment":
 
 
             st.code("bash ./local.sh")
+
         except:
             pass
 
