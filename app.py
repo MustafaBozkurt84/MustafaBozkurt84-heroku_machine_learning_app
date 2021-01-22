@@ -2443,7 +2443,7 @@ if PAGE == "Deployment":
         w.write('exec(marshal.loads(' + repr(b) + '))')
         w.close()
         #os.system("echo git init > local.sh")
-        os.system("echo heroku login >> local.sh")
+        os.system("echo heroku login > local.sh")
         os.system(f"echo heroku create {project_name}-app-ml >> local.sh")
         os.system("echo git add . >> local.sh")
         os.system("echo git commit -m 'app.py' >> local.sh")
