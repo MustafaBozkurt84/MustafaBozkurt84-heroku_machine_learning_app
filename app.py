@@ -1737,11 +1737,18 @@ if  PAGE == "Feature Engineering and Machine Learning":
                                              config_dict={ clf_tune : params},
                                              cv=fold, scoring='accuracy')
             clf.fit(X_train, y_train)
-            st.code("confusion_matrix Bayesian Optimization (Hyperopt): {}".format(confusion_matrix(y_test, y_pred)))
-            st.code("Accuracy Score Bayesian Optimization (Hyperopt) {}".format(accuracy_score(y_test, y_pred)))
-            st.sidebar.write("Accuracy Score Tuned Genetic Algorithms (TPOT Classifier){}".format(clf.score(X_test, y_test)))
-            st.code(
-                "Classification report Bayesian Optimization (Hyperopt): {}".format(classification_report(y_test, y_pred)))
+
+            accuracy = clf.score(X_test, y_test)
+            st.sidebar.markdown(
+                f"""<div style="background:#025246 ;padding:1px"><h3 style="color:white;text-align:left;">{hyperop} </h3></div>""",
+                unsafe_allow_html=True)
+            st.sidebar.markdown(
+                f"""<div style="background:#025246 ;padding:1px"><h3 style="color:white;text-align:left;">Acc : {accuracy}</h3></div>""",
+                unsafe_allow_html=True)
+            st.markdown(
+                f"""<div style="background:#025246 ;padding:1px"><h3 style="color:white;text-align:left;">Acc : {accuracy}</h3></div>""",
+                unsafe_allow_html=True)
+
             st.code(f"""#{models_name}
     tpot_classifier = TPOTClassifier(generations=5, 
                                 population_size=24, 
