@@ -189,9 +189,7 @@ if  PAGE == "Feature Engineering and Machine Learning":
     msno.matrix(df)""")
     st.cache()
 
-    y = df.loc[:, target_column]
-    X = df.drop([target_column], axis=1)
-    df = X
+
     st.write(30*"--")
     st.markdown("""
         <div style="background:#025246 ;padding:10px">
@@ -202,7 +200,8 @@ if  PAGE == "Feature Engineering and Machine Learning":
     # find and remove correlated features
     threshold = st.selectbox("Select threshold for find and remove correlated features", (1,0.9,0.8,0.7,0.6,0.5))
     corCol=[]
-    numeric_cols = df.select_dtypes(exclude=["object"]).columns
+    X = df.drop([target_column], axis=1)
+    numeric_cols = X.select_dtypes(exclude=["object"]).columns
     def correlation(dataset, threshold):
         col_corr = set()  # Set of all the names of correlated columns
         corr_matrix = dataset.corr()
@@ -216,8 +215,22 @@ if  PAGE == "Feature Engineering and Machine Learning":
     correlation(df,threshold=threshold)
     df.drop(corCol, axis=1, inplace=True)
     if len(corCol)>0:
+        st.markdown(f"""
+        <!DOCTYPE html>
+        <title>My Example</title>
+        <style>
+        	.box {{
+        		background-color: transparent;
+        		font-size: 1vw;
+        		padding: 0vw;
+        		margin: 1vw;
+        		border: solid;
+                border-color:#F50057;
+        	}}
+        </style>
 
-        st.markdown(f"""<div style="color:black";border-color:#F50057" class="box">{corCol} columns correlations more than {threshold} and we dropped</div>""", unsafe_allow_html=True)
+        <div class="box">{corCol} columns correlations more than {threshold} and we dropped</div>""", unsafe_allow_html=True)
+        #st.markdown(f"""<div style="color:black";border-color:#F50057" class="box">{corCol} columns correlations more than {threshold} and we dropped</div>""", unsafe_allow_html=True)
 
     else:
         st.markdown("""<div style="color:black;border-color:black;" class="box">No columns exceeding the threshold you set for correlation</div>""", unsafe_allow_html=True)
@@ -419,8 +432,9 @@ if  PAGE == "Feature Engineering and Machine Learning":
                 </div>
                 """, unsafe_allow_html=True)
 
-
-
+    y = df.loc[:, target_column]
+    X = df.drop([target_column], axis=1)
+    df = X
     encode_list = []
     def allonehotencoding(df):
 
@@ -2453,8 +2467,23 @@ if PAGE == "Deployment":
                 bytes = f.read()
                 b64 = base64.b64encode(bytes).decode()
                 href = f'<a href="data:file/tar;base64,{b64}">Download File</a> (right-click and save as local_deployment.tar)'
+                st.markdown(f"""
+<!DOCTYPE html>
+                       <title>My Example</title>
+                       <style>
+                       	.box {{
+                       		background-color: transparent;
+                       		font-size: 1vw;
+                       		padding: 0vw;
+                       		margin: 1vw;
+                       		border: solid;
+                               border-color:#F50057;
+                       	}}
+                       </style>
 
-                st.markdown(f"""This file contains everything for deployment to heroku. Download the file to the desktop(right-click and save as local_deployment.tar).Then type the commands below into git bash or you can deploy by yourself.""", unsafe_allow_html=True)
+                       <div class="box">This file contains everything for deployment to heroku. Download the file to the desktop(right-click and save as local_deployment.tar).Then type the commands below into git bash or you can deploy by yourself.</div>""",
+                            unsafe_allow_html=True)
+
 
 
                 st.markdown(href, unsafe_allow_html=True)
