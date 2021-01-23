@@ -480,41 +480,39 @@ if  PAGE == "Feature Engineering and Machine Learning":
     for i in df.columns:
         if (np.dtype(df[i]) == "object"):
             df = df.drop([i], axis=1)""")
-
-    st.markdown(30*"--")
-    st.markdown("""
+    try:
+        st.markdown(30*"--")
+        st.markdown("""
                             <div style="background:#025246 ;padding:10px">
                             <h3 style="color:white;text-align:left;"> Feature Selection</h3>
                             </div>
                             """, unsafe_allow_html=True)
 
-    st.write("""
-    ## Feature Selection
-    """)
-
-    Feature_importance=st.selectbox("Feature Selection",("Keep all Feature", "Reduce Features"))
 
 
-    def Univariate_Selection(indipendant, dependent, N):
-        select_obj = SelectKBest(score_func=chi2, k=10)
-        selected = select_obj.fit(indipendant, dependent)
-        feature_score = pd.DataFrame(selected.scores_, index=indipendant.columns, columns=["Score"])["Score"].sort_values(
-            ascending=False).reset_index()
-        st.write("Feature Importance Table")
-        st.table(feature_score.head(N))
-        plt.figure(figsize=(16, 16))
-        sns.barplot(data=feature_score.sort_values(by='Score', ascending=False).head(N), x='Score', y='index')
-        plt.title(f'{N} TOP feature importance ')
-        st.pyplot()
-        X_Selected.extend(feature_score["index"].head(N))
-    def Univariate_Selection1(indipendant, dependent, N):
-        select_obj = SelectKBest(score_func=chi2, k=10)
-        selected = select_obj.fit(indipendant, dependent)
-        feature_score = pd.DataFrame(selected.scores_, index=indipendant.columns, columns=["Score"])["Score"].sort_values(
-            ascending=False).reset_index()
-        st.write("Feature Importance Table")
-        st.table(feature_score)
-    try:
+        Feature_importance=st.selectbox("Feature Selection",("Keep all Feature", "Reduce Features"))
+
+
+        def Univariate_Selection(indipendant, dependent, N):
+            select_obj = SelectKBest(score_func=chi2, k=10)
+            selected = select_obj.fit(indipendant, dependent)
+            feature_score = pd.DataFrame(selected.scores_, index=indipendant.columns, columns=["Score"])["Score"].sort_values(
+                ascending=False).reset_index()
+            st.write("Feature Importance Table")
+            st.table(feature_score.head(N))
+            plt.figure(figsize=(16, 16))
+            sns.barplot(data=feature_score.sort_values(by='Score', ascending=False).head(N), x='Score', y='index')
+            plt.title(f'{N} TOP feature importance ')
+            st.pyplot()
+            X_Selected.extend(feature_score["index"].head(N))
+        def Univariate_Selection1(indipendant, dependent, N):
+            select_obj = SelectKBest(score_func=chi2, k=10)
+            selected = select_obj.fit(indipendant, dependent)
+            feature_score = pd.DataFrame(selected.scores_, index=indipendant.columns, columns=["Score"])["Score"].sort_values(
+                ascending=False).reset_index()
+            st.write("Feature Importance Table")
+            st.table(feature_score)
+
         if Feature_importance == "Reduce Features":
             st.write()
 
@@ -546,15 +544,15 @@ if  PAGE == "Feature Engineering and Machine Learning":
             st.markdown(f"""<div style="color:black;border-color:black;" class="box">You select all features / Total Columns {len(df.columns)}</div>""",unsafe_allow_html=True)
             Univariate_Selection1(df,y,(df.columns))
 
-
-        st.markdown(30*"--")
-        st.markdown("""
+    except:
+        pass
+    st.markdown(30*"--")
+    st.markdown("""
                             <div style="background:#025246 ;padding:10px">
                             <h3 style="color:white;text-align:left;"> Standardization</h3>
                             </div>
                             """, unsafe_allow_html=True)
-    except:
-        pass
+
 
     standard_apply = st.selectbox("Standardization",("Do Not Apply Standardization","Apply Standardization"))
     if standard_apply=="Apply Standardization":
