@@ -33,8 +33,10 @@ import joblib
 import os
 import streamlit.components.v1 as components
 import marshal, types
-st.sidebar.write("https://github.com/MustafaBozkurt84")
-st.sidebar.write("https://www.linkedin.com/in/mustafa-bozkurt-3405a91a5/")
+st.sidebar.image("./dataforte.png")
+st.sidebar.write("https://github.com/vzn2000/Automated_ML_Project")
+st.sidebar.write("https://github.com/MustafaBozkurt84/MustafaBozkurt84-heroku_machine_learning_app")
+
 html_temp = """
     <div style="background:#025246 ;padding:10px">
     <h2 style="color:white;text-align:center;"> Create Your Own Model and Generate Code</h2>
