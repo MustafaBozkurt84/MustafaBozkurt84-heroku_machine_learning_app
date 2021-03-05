@@ -33,7 +33,7 @@ import joblib
 import os
 import streamlit.components.v1 as components
 import marshal, types
-st.sidebar.image("./dataforte.png")
+st.sidebar.image("./dataforte1.png")
 st.sidebar.write("https://github.com/vzn2000/Automated_ML_Project")
 st.sidebar.write("https://github.com/MustafaBozkurt84/MustafaBozkurt84-heroku_machine_learning_app")
 
